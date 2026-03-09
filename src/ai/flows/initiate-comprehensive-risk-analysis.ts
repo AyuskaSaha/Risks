@@ -33,9 +33,6 @@ const OrganizationalDataInputSchema = z.object({
   brdDocument: z.string().describe('Content of the Business Requirements Document.'),
   legalPolicyDocument: z.string().describe('Content of Company Policies or Legal Frameworks.'),
   proposalDocument: z.string().describe('Content of the Strategic Proposal document.'),
-  financialData: z.record(z.string(), z.any()).optional().describe('Financial data.'),
-  cybersecurityReports: z.record(z.string(), z.any()).optional().describe('Cybersecurity reports.'),
-  operationalMetrics: z.record(z.string(), z.any()).optional().describe('Operational metrics.'),
 });
 
 export type InitiateComprehensiveRiskAnalysisInput = z.infer<typeof OrganizationalDataInputSchema>;
@@ -52,6 +49,7 @@ const ComprehensiveRiskAnalysisOutputSchema = z.object({
     compliance: AgentOutputSchema,
     strategicMarket: AgentOutputSchema,
   }),
+  // Visualization Data for 15 Visuals
   heatmapData: z.array(z.object({ impact: z.number(), probability: z.number(), count: z.number(), label: z.string() })),
   trendData: z.array(z.object({ month: z.string(), current: z.number(), forecast: z.number() })),
   severityDistribution: z.array(z.object({ category: z.string(), Low: z.number(), Medium: z.number(), High: z.number(), Critical: z.number() })),
@@ -61,6 +59,8 @@ const ComprehensiveRiskAnalysisOutputSchema = z.object({
   gapAnalysis: z.object({ current: z.number(), desired: z.number(), gap: z.number() }),
   riskTimeline: z.array(z.object({ time: z.string(), event: z.string(), type: z.string() })),
   riskReduction: z.array(z.object({ name: z.string(), before: z.number(), after: z.number() })),
+  bubbleData: z.array(z.object({ x: z.number(), y: z.number(), z: z.number(), name: z.string() })),
+  rootCauseData: z.array(z.object({ factor: z.string(), percentage: z.number(), color: z.string() })),
 });
 
 export type InitiateComprehensiveRiskAnalysisOutput = z.infer<typeof ComprehensiveRiskAnalysisOutputSchema>;
@@ -81,7 +81,7 @@ Primary Analysis Documents:
 
 Your mission is to find inconsistencies, risks, and anomalies across all 15 vectors.
 Generate comprehensive visualization data including:
-1. heatmapData: Distribution across impact/probability grid.
+1. heatmapData: Distribution across impact/probability grid (1-5 scale).
 2. trendData: 6 months history + prediction.
 3. severityDistribution: Domain-specific severity stacks.
 4. mitigationProgress: % completion for key plans.
@@ -89,9 +89,11 @@ Generate comprehensive visualization data including:
 6. gapAnalysis: Current state vs target.
 7. riskTimeline: Historical detections.
 8. incidentFrequency: Daily incident count.
-9. riskReduction: Comparative data points.
+9. riskReduction: Before vs After mitigation values.
+10. bubbleData: Impact (x) vs Likelihood (y) with severity (z).
+11. rootCauseData: Factors contributing to systemic risk.
 
-Cross-reference documents (e.g., if Proposal violates Legal).`,
+Cross-reference documents (e.g., if Proposal violates Legal/SRS).`,
 });
 
 /**
