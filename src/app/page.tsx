@@ -11,7 +11,8 @@ import {
   Activity, 
   ArrowRight,
   Loader2,
-  ListRestart
+  ListRestart,
+  ShieldAlert
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -25,24 +26,26 @@ import {
   ResponsiveContainer, 
   XAxis, 
   YAxis, 
-  Cell,
-  PieChart,
-  Pie
+  Cell
 } from "recharts";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 export default function Dashboard() {
   const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
   const [data, setData] = React.useState<InitiateComprehensiveRiskAnalysisOutput | null>(null);
 
   const fetchData = async () => {
     setLoading(true);
+    setError(null);
     try {
       const result = await initiateComprehensiveRiskAnalysis(mockOrganizationalData);
       setData(result);
-    } catch (error) {
-      console.error("Failed to fetch risk analysis", error);
+    } catch (e: any) {
+      console.error("Dashboard error:", e);
+      setError(e.message || "An unexpected error occurred while orchestrating agents.");
     } finally {
       setLoading(false);
     }
@@ -58,13 +61,31 @@ export default function Dashboard() {
         <Loader2 className="w-12 h-12 text-primary animate-spin" />
         <div className="text-center">
           <h2 className="text-xl font-semibold">Orchestrating Risk Agents...</h2>
-          <p className="text-muted-foreground">Analyzing financial, cyber, operational, compliance, and strategic data.</p>
+          <p className="text-muted-foreground max-w-md mx-auto">Connecting to Financial, Cyber, Operational, Compliance, and Strategic LLM agents for deep-vector analysis.</p>
         </div>
       </div>
     );
   }
 
-  if (!data) return <div>Failed to load data.</div>;
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[80vh] space-y-6 text-center">
+        <div className="w-20 h-20 rounded-full bg-destructive/10 flex items-center justify-center">
+          <ShieldAlert className="w-10 h-10 text-destructive" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-2xl font-bold">Analysis Interrupted</h2>
+          <p className="text-muted-foreground max-w-lg">{error}</p>
+        </div>
+        <Button onClick={fetchData} className="gap-2">
+          <ListRestart className="w-4 h-4" />
+          Retry Analysis
+        </Button>
+      </div>
+    );
+  }
+
+  if (!data) return <div>No data available.</div>;
 
   const domainData = [
     { name: "Financial", score: data.domainAnalysis.financial.overallRiskScore, fill: "hsl(var(--chart-1))" },
@@ -108,7 +129,6 @@ export default function Dashboard() {
               <BarChart data={domainData}>
                 <XAxis dataKey="name" axisLine={false} tickLine={false} />
                 <YAxis hide domain={[0, 100]} />
-                <ChartTooltip content={<ChartTooltipContent />} />
                 <Bar dataKey="score" radius={[4, 4, 0, 0]}>
                   {domainData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.fill} />

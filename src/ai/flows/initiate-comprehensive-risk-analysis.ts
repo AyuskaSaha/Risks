@@ -15,7 +15,6 @@ import {z} from 'genkit';
 
 // --- Schemas ---
 
-// Helper Schema for consistent output from each specialized agent
 const AgentOutputSchema = z.object({
   risks: z.array(z.object({
     name: z.string().describe('Name of the identified risk.'),
@@ -30,7 +29,6 @@ const AgentOutputSchema = z.object({
   overallRiskScore: z.number().min(0).max(100).describe('A numerical score for the risk level in this specific domain (0-100), where higher means higher risk.'),
 });
 
-// Input schema for the main flow, representing comprehensive mock organizational data
 const OrganizationalDataInputSchema = z.object({
   companyName: z.string().describe('The name of the organization for which the risk analysis is being performed.'),
   financialData: z.record(z.string(), z.any()).describe('Comprehensive financial data (e.g., balance sheets, income statements, cash flow, debt ratios) in JSON format.'),
@@ -42,7 +40,6 @@ const OrganizationalDataInputSchema = z.object({
 
 export type InitiateComprehensiveRiskAnalysisInput = z.infer<typeof OrganizationalDataInputSchema>;
 
-// Input schema for individual agent prompts (data stringified)
 const AgentPromptInputSchema = z.object({
   companyName: z.string().describe('The name of the organization.'),
   financialData: z.string().describe('Stringified JSON of financial data.'),
@@ -52,7 +49,6 @@ const AgentPromptInputSchema = z.object({
   strategicMarketReports: z.string().describe('Stringified JSON of strategic/market reports.'),
 }).describe('Pre-processed organizational data with complex objects stringified for direct inclusion in prompts.');
 
-// Output schema for the main comprehensive risk analysis flow
 const ComprehensiveRiskAnalysisOutputSchema = z.object({
   overallRiskIndex: z.number().min(0).max(100).describe('A numerical score representing the aggregated overall organizational risk (0-100), where higher means higher risk.'),
   overallRiskLevel: z.enum(['Low', 'Medium', 'High', 'Critical']).describe('Categorical representation of overall risk across the organization, derived from the overallRiskIndex.'),
@@ -70,116 +66,75 @@ const ComprehensiveRiskAnalysisOutputSchema = z.object({
 
 export type InitiateComprehensiveRiskAnalysisOutput = z.infer<typeof ComprehensiveRiskAnalysisOutputSchema>;
 
-// --- Prompts for Individual Agents ---
+// --- Prompts ---
 
 const financialRiskAgentPrompt = ai.definePrompt({
   name: 'financialRiskAgentPrompt',
-  input: { schema: AgentPromptInputSchema }, // Use the stringified input schema
+  input: { schema: AgentPromptInputSchema },
   output: { schema: AgentOutputSchema },
-  prompt: `You are an expert Financial Risk Analyst. Your task is to meticulously analyze the provided financial data for the company "{{{companyName}}}", identify potential financial risks, detect anomalies, predict their probability and impact, and propose clear, actionable mitigation strategies.
-  
-  Financial Data (JSON):
-  {{{financialData}}}
-  
-  Based on this data, provide your comprehensive analysis in a structured JSON format conforming precisely to the AgentOutputSchema, focusing exclusively on financial risks. Your response must highlight specific financial anomalies and provide detailed, evidence-based reasoning for each identified risk, its assessment, and the proposed mitigation. Ensure your overallRiskScore accurately reflects the financial risk posture.`,
+  prompt: `You are an expert Financial Risk Analyst. Analyze the financial data for "{{{companyName}}}". 
+  Financial Data: {{{financialData}}}
+  Focus on identifying risks, detecting anomalies, and proposing mitigation strategies.`,
 });
 
 const cybersecurityRiskAgentPrompt = ai.definePrompt({
   name: 'cybersecurityRiskAgentPrompt',
   input: { schema: AgentPromptInputSchema },
   output: { schema: AgentOutputSchema },
-  prompt: `You are an expert Cybersecurity Risk Analyst. Your task is to meticulously analyze the provided cybersecurity reports and data for the company "{{{companyName}}}", identify potential cybersecurity risks, detect anomalies, predict their probability and impact, and propose clear, actionable mitigation strategies.
-  
-  Cybersecurity Reports (JSON):
-  {{{cybersecurityReports}}}
-  
-  Based on this data, provide your comprehensive analysis in a structured JSON format conforming precisely to the AgentOutputSchema, focusing exclusively on cybersecurity risks. Your response must highlight specific cybersecurity anomalies and provide detailed, evidence-based reasoning for each identified risk, its assessment, and the proposed mitigation. Ensure your overallRiskScore accurately reflects the cybersecurity risk posture.`,
+  prompt: `You are an expert Cybersecurity Risk Analyst. Analyze the cybersecurity reports for "{{{companyName}}}".
+  Cybersecurity Data: {{{cybersecurityReports}}}
+  Focus on identifying risks, detecting anomalies, and proposing mitigation strategies.`,
 });
 
 const operationalRiskAgentPrompt = ai.definePrompt({
   name: 'operationalRiskAgentPrompt',
   input: { schema: AgentPromptInputSchema },
   output: { schema: AgentOutputSchema },
-  prompt: `You are an expert Operational Risk Analyst. Your task is to meticulously analyze the provided operational metrics and data for the company "{{{companyName}}}", identify potential operational risks, detect anomalies, predict their probability and impact, and propose clear, actionable mitigation strategies.
-  
-  Operational Metrics (JSON):
-  {{{operationalMetrics}}}
-  
-  Based on this data, provide your comprehensive analysis in a structured JSON format conforming precisely to the AgentOutputSchema, focusing exclusively on operational risks. Your response must highlight specific operational anomalies and provide detailed, evidence-based reasoning for each identified risk, its assessment, and the proposed mitigation. Ensure your overallRiskScore accurately reflects the operational risk posture.`,
+  prompt: `You are an expert Operational Risk Analyst. Analyze the operational metrics for "{{{companyName}}}".
+  Operational Data: {{{operationalMetrics}}}
+  Focus on identifying risks, detecting anomalies, and proposing mitigation strategies.`,
 });
 
 const complianceRiskAgentPrompt = ai.definePrompt({
   name: 'complianceRiskAgentPrompt',
   input: { schema: AgentPromptInputSchema },
   output: { schema: AgentOutputSchema },
-  prompt: `You are an expert Compliance Risk Analyst. Your task is to meticulously analyze the provided compliance documents and data for the company "{{{companyName}}}", identify potential compliance risks, detect anomalies, predict their probability and impact, and propose clear, actionable mitigation strategies.
-  
-  Compliance Documents (JSON):
-  {{{complianceDocuments}}}
-  
-  Based on this data, provide your comprehensive analysis in a structured JSON format conforming precisely to the AgentOutputSchema, focusing exclusively on compliance risks. Your response must highlight specific compliance anomalies and provide detailed, evidence-based reasoning for each identified risk, its assessment, and the proposed mitigation. Ensure your overallRiskScore accurately reflects the compliance risk posture.`,
+  prompt: `You are an expert Compliance Risk Analyst. Analyze the compliance documents for "{{{companyName}}}".
+  Compliance Data: {{{complianceDocuments}}}
+  Focus on identifying risks, detecting anomalies, and proposing mitigation strategies.`,
 });
 
 const strategicMarketRiskAgentPrompt = ai.definePrompt({
   name: 'strategicMarketRiskAgentPrompt',
   input: { schema: AgentPromptInputSchema },
   output: { schema: AgentOutputSchema },
-  prompt: `You are an expert Strategic and Market Risk Analyst. Your task is to meticulously analyze the provided strategic and market analysis reports for the company "{{{companyName}}}", identify potential strategic and market risks, detect anomalies, predict their probability and impact, and propose clear, actionable mitigation strategies.
-  
-  Strategic and Market Reports (JSON):
-  {{{strategicMarketReports}}}
-  
-  Based on this data, provide your comprehensive analysis in a structured JSON format conforming precisely to the AgentOutputSchema, focusing exclusively on strategic and market risks. Your response must highlight specific strategic/market anomalies and provide detailed, evidence-based reasoning for each identified risk, its assessment, and the proposed mitigation. Ensure your overallRiskScore accurately reflects the strategic and market risk posture.`,
+  prompt: `You are an expert Strategic and Market Risk Analyst. Analyze the strategic/market reports for "{{{companyName}}}".
+  Market Data: {{{strategicMarketReports}}}
+  Focus on identifying risks, detecting anomalies, and proposing mitigation strategies.`,
 });
 
-// --- Prompt for Aggregator Agent ---
-
-// Input schema for the aggregator prompt
 const AggregatorPromptInputSchema = z.object({
-  companyName: z.string().describe('The name of the organization.'),
-  financialAnalysis: AgentOutputSchema.describe('The detailed financial risk analysis report from the Financial Risk Agent.'),
-  cybersecurityAnalysis: AgentOutputSchema.describe('The detailed cybersecurity risk analysis report from the Cybersecurity Risk Agent.'),
-  operationalAnalysis: AgentOutputSchema.describe('The detailed operational risk analysis report from the Operational Risk Agent.'),
-  complianceAnalysis: AgentOutputSchema.describe('The detailed compliance risk analysis report from the Compliance Risk Agent.'),
-  strategicMarketAnalysis: AgentOutputSchema.describe('The detailed strategic and market risk analysis report from the Strategic/Market Risk Agent.'),
-}).describe('Inputs combining all individual risk agent analyses for aggregation.');
+  companyName: z.string(),
+  financialAnalysis: AgentOutputSchema,
+  cybersecurityAnalysis: AgentOutputSchema,
+  operationalAnalysis: AgentOutputSchema,
+  complianceAnalysis: AgentOutputSchema,
+  strategicMarketAnalysis: AgentOutputSchema,
+});
 
 const riskAggregatorPrompt = ai.definePrompt({
   name: 'riskAggregatorPrompt',
   input: { schema: AggregatorPromptInputSchema },
   output: { schema: ComprehensiveRiskAnalysisOutputSchema },
-  prompt: `You are the central AI Risk Coordinator, responsible for aggregating and synthesizing risk analyses from various specialized AI agents for the company "{{{companyName}}}". Your goal is to provide a holistic and comprehensive view of the organization's risk profile.
-  
-  You have received the following detailed risk analyses:
-  
-  Financial Risk Analysis:
-  {{{financialAnalysis}}}
-  
-  Cybersecurity Risk Analysis:
-  {{{cybersecurityAnalysis}}}
-  
-  Operational Risk Analysis:
-  {{{operationalAnalysis}}}
-  
-  Compliance Risk Analysis:
-  {{{complianceAnalysis}}}
-  
-  Strategic/Market Risk Analysis:
-  {{{strategicMarketAnalysis}}}
-  
-  Your primary tasks are to:
-  1.  Review and combine the key insights, identified risks, and anomalies from all individual domain analyses.
-  2.  Identify overarching themes, interdependencies between different risk categories, and critical anomalies that span multiple domains or have a widespread organizational impact.
-  3.  Calculate an 'overallRiskIndex' (0-100) and 'overallRiskLevel' (Low, Medium, High, Critical) based on the combined severity, likelihood, and interconnectedness of all identified risks across the organization. This should be a synthesized score, not just an average.
-  4.  Provide a concise yet thorough 'anomaliesSummary' of the most significant and impactful anomalies detected across the entire organization.
-  5.  Propose 'globalMitigationStrategies' that address cross-cutting risks, leverage synergistic actions, and provide a holistic approach to organizational risk reduction. These should be high-level and strategic.
-  6.  Provide detailed 'aggregatedReasoning' explaining your overall risk assessment, how different domain analyses interact and influence each other, and the rationale behind the global mitigation strategies and the overall risk score.
-  
-  Output your comprehensive risk analysis in a structured JSON format conforming precisely to the ComprehensiveRiskAnalysisOutputSchema.
-  `,
+  prompt: `You are the central AI Risk Coordinator for "{{{companyName}}}". 
+  Aggregate these analyses into a holistic profile:
+  - Financial: {{{financialAnalysis}}}
+  - Cyber: {{{cybersecurityAnalysis}}}
+  - Operational: {{{operationalAnalysis}}}
+  - Compliance: {{{complianceAnalysis}}}
+  - Strategic: {{{strategicMarketAnalysis}}}
+  Provide overall index, summary, and global strategies.`,
 });
-
-// --- Main Flow Definition ---
 
 const initiateComprehensiveRiskAnalysisFlow = ai.defineFlow(
   {
@@ -188,48 +143,47 @@ const initiateComprehensiveRiskAnalysisFlow = ai.defineFlow(
     outputSchema: ComprehensiveRiskAnalysisOutputSchema,
   },
   async (input) => {
-    // Prepare input by stringifying complex objects for agent prompts
+    if (!process.env.GOOGLE_GENAI_API_KEY && !process.env.GEMINI_API_KEY) {
+      throw new Error('API Key is missing. Please add GOOGLE_GENAI_API_KEY to your environment.');
+    }
+
     const stringifiedAgentInput: z.infer<typeof AgentPromptInputSchema> = {
       companyName: input.companyName,
-      financialData: JSON.stringify(input.financialData, null, 2),
-      cybersecurityReports: JSON.stringify(input.cybersecurityReports, null, 2),
-      operationalMetrics: JSON.stringify(input.operationalMetrics, null, 2),
-      complianceDocuments: JSON.stringify(input.complianceDocuments, null, 2),
-      strategicMarketReports: JSON.stringify(input.strategicMarketReports, null, 2),
+      financialData: JSON.stringify(input.financialData),
+      cybersecurityReports: JSON.stringify(input.cybersecurityReports),
+      operationalMetrics: JSON.stringify(input.operationalMetrics),
+      complianceDocuments: JSON.stringify(input.complianceDocuments),
+      strategicMarketReports: JSON.stringify(input.strategicMarketReports),
     };
 
-    // Run all five specialized AI agent prompts in parallel
-    const [
-      financialAnalysis,
-      cybersecurityAnalysis,
-      operationalAnalysis,
-      complianceAnalysis,
-      strategicMarketAnalysis,
-    ] = await Promise.all([
-      financialRiskAgentPrompt(stringifiedAgentInput).then(response => response.output!),
-      cybersecurityRiskAgentPrompt(stringifiedAgentInput).then(response => response.output!),
-      operationalRiskAgentPrompt(stringifiedAgentInput).then(response => response.output!),
-      complianceRiskAgentPrompt(stringifiedAgentInput).then(response => response.output!),
-      strategicMarketRiskAgentPrompt(stringifiedAgentInput).then(response => response.output!),
+    // Run in parallel for efficiency
+    const results = await Promise.allSettled([
+      financialRiskAgentPrompt(stringifiedAgentInput),
+      cybersecurityRiskAgentPrompt(stringifiedAgentInput),
+      operationalRiskAgentPrompt(stringifiedAgentInput),
+      complianceRiskAgentPrompt(stringifiedAgentInput),
+      strategicMarketRiskAgentPrompt(stringifiedAgentInput),
     ]);
 
-    // Prepare input for the aggregator prompt using the outputs from individual agents
+    const successes = results.map(r => r.status === 'fulfilled' ? r.value.output : null);
+    if (successes.some(s => !s)) {
+      throw new Error('One or more risk agents failed to respond. Check your API limits.');
+    }
+
     const aggregatorInput: z.infer<typeof AggregatorPromptInputSchema> = {
       companyName: input.companyName,
-      financialAnalysis,
-      cybersecurityAnalysis,
-      operationalAnalysis,
-      complianceAnalysis,
-      strategicMarketAnalysis,
+      financialAnalysis: successes[0]!,
+      cybersecurityAnalysis: successes[1]!,
+      operationalAnalysis: successes[2]!,
+      complianceAnalysis: successes[3]!,
+      strategicMarketAnalysis: successes[4]!,
     };
 
-    // Run the aggregator prompt to synthesize the comprehensive risk analysis
     const { output } = await riskAggregatorPrompt(aggregatorInput);
-    return output!;
+    if (!output) throw new Error('Aggregation failed.');
+    return output;
   }
 );
-
-// --- Exported Wrapper Function ---
 
 export async function initiateComprehensiveRiskAnalysis(
   input: InitiateComprehensiveRiskAnalysisInput
