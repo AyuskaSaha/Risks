@@ -28,7 +28,9 @@ import {
   Network,
   Calendar,
   Layers,
-  Target
+  Target,
+  ArrowDownToLine,
+  Info
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -53,7 +55,6 @@ import {
   RadarChart,
   PolarGrid,
   PolarAngleAxis,
-  PolarRadiusAxis,
   Scatter,
   ScatterChart,
   ZAxis,
@@ -68,6 +69,7 @@ import { Label } from "@/components/ui/label";
 import { mockOrganizationalData } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const chartConfig = {
   score: { label: "Risk Score" },
@@ -108,6 +110,7 @@ export default function Dashboard() {
 
   const handleLoadSample = () => {
     setFormData(mockOrganizationalData);
+    setError(null);
   };
 
   const isUploaded = (type: 'srs' | 'brd' | 'legal' | 'proposal') => {
@@ -141,6 +144,7 @@ export default function Dashboard() {
       setShowSetup(false);
     } catch (e: any) {
       setError(e.message || "Risk Agent Orchestration failed.");
+      setShowSetup(true);
     } finally {
       setAnalyzing(false);
     }
@@ -184,6 +188,14 @@ export default function Dashboard() {
           </p>
         </div>
 
+        {error && (
+          <Alert variant="destructive" className="bg-destructive/10 border-destructive/20 text-destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>System Error</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
         <Card className="bg-card/50 border-primary/20 shadow-2xl overflow-hidden backdrop-blur-md">
           <div className="h-1.5 w-full bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />
           <CardHeader className="pb-6">
@@ -211,17 +223,17 @@ export default function Dashboard() {
                 />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {['srs', 'brd', 'legal', 'proposal'].map((id) => (
-                  <div key={id} onClick={() => handleFileUpload(id as any)} className={cn(
+                {(['srs', 'brd', 'legal', 'proposal'] as const).map((id) => (
+                  <div key={id} onClick={() => handleFileUpload(id)} className={cn(
                     "flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed transition-all h-[140px] cursor-pointer",
-                    isUploaded(id as any) ? "bg-primary/5 border-primary/40" : "bg-white/5 border-white/5 hover:border-white/20"
+                    isUploaded(id) ? "bg-primary/5 border-primary/40" : "bg-white/5 border-white/5 hover:border-white/20"
                   )}>
-                    {isUploaded(id as any) ? (
+                    {isUploaded(id) ? (
                       <CheckCircle2 className="w-8 h-8 text-primary" />
                     ) : (
                       <FileText className="w-8 h-8 opacity-40" />
                     )}
-                    <span className="text-xs mt-2 uppercase font-bold tracking-tighter">{id}</span>
+                    <span className="text-xs mt-2 uppercase font-bold tracking-tighter">{id} Document</span>
                   </div>
                 ))}
               </div>
@@ -243,15 +255,31 @@ export default function Dashboard() {
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-1">
-          <Badge className="bg-primary/20 text-primary border-primary/20 text-[10px] font-black tracking-widest">LIVE ORCHESTRATION</Badge>
+          <Badge className="bg-primary/20 text-primary border-primary/20 text-[10px] font-black tracking-widest uppercase">Live Orchestration Active</Badge>
           <h1 className="text-5xl font-black tracking-tight text-white font-headline">Threat Command</h1>
           <p className="text-muted-foreground">Strategic Risk Engine for <span className="text-white font-bold">{formData.companyName}</span></p>
         </div>
-        <Button onClick={() => setShowSetup(true)} variant="outline" className="gap-2 bg-white/5 hover:bg-white/10 border-white/10 text-white h-12 rounded-xl">
-          <ListRestart className="w-5 h-5" />
-          Recalibrate
-        </Button>
+        <div className="flex gap-2">
+          <Link href="/copilot">
+            <Button className="gap-2 bg-primary hover:bg-primary/90 text-black h-12 rounded-xl">
+              <ShieldAlert className="w-5 h-5" />
+              Open Copilot
+            </Button>
+          </Link>
+          <Button onClick={() => setShowSetup(true)} variant="outline" className="gap-2 bg-white/5 hover:bg-white/10 border-white/10 text-white h-12 rounded-xl">
+            <ListRestart className="w-5 h-5" />
+            Recalibrate
+          </Button>
+        </div>
       </div>
+
+      <Alert className="bg-primary/5 border-primary/20">
+        <Info className="h-4 w-4 text-primary" />
+        <AlertTitle className="text-primary font-bold">Orchestrator Intelligence Summary</AlertTitle>
+        <AlertDescription className="text-foreground/80 italic">
+          {data.anomaliesSummary}
+        </AlertDescription>
+      </Alert>
 
       {/* Grid Layout for Visuals */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-6">
@@ -264,17 +292,19 @@ export default function Dashboard() {
           <RiskGauge score={data.overallRiskIndex} level={data.overallRiskLevel} />
         </Card>
 
-        {/* 2. Risk Matrix (5x5) */}
+        {/* 2. Risk Matrix (5x5) & 9. Bubble Chart */}
         <Card className="lg:col-span-1 xl:col-span-2 bg-card/50 border-white/5">
           <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2"><Layers className="w-5 h-5 text-primary" /> Risk Matrix</CardTitle>
+            <CardTitle className="text-lg flex items-center gap-2"><Layers className="w-5 h-5 text-primary" /> Risk Heatmap & Matrix</CardTitle>
+            <CardDescription className="text-[10px]">Impact vs Probability Distribution</CardDescription>
           </CardHeader>
           <CardContent className="h-[220px]">
              <ChartContainer config={chartConfig} className="h-full w-full">
                 <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-                  <XAxis type="number" dataKey="probability" name="Probability" domain={[0, 5]} hide />
-                  <YAxis type="number" dataKey="impact" name="Impact" domain={[0, 5]} hide />
-                  <ZAxis type="number" dataKey="count" range={[100, 500]} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                  <XAxis type="number" dataKey="probability" name="Probability" domain={[0, 5]} unit="/5" tick={{fill: 'white', fontSize: 10}} />
+                  <YAxis type="number" dataKey="impact" name="Impact" domain={[0, 5]} unit="/5" tick={{fill: 'white', fontSize: 10}} />
+                  <ZAxis type="number" dataKey="count" range={[100, 1000]} />
                   <Tooltip cursor={{ strokeDasharray: '3 3' }} content={<ChartTooltipContent />} />
                   <Scatter data={data.heatmapData} fill="hsl(var(--primary))">
                     {data.heatmapData.map((entry, index) => (
@@ -286,52 +316,62 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* 3. Dept Risk Comparison (Radar) */}
+        {/* 12. Dept Risk Comparison (Radar) */}
         <Card className="lg:col-span-1 xl:col-span-2 bg-card/50 border-white/5">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2"><Target className="w-5 h-5 text-primary" /> Cross-Dept Comparison</CardTitle>
+            <CardDescription className="text-[10px]">Inter-departmental Risk Exposure</CardDescription>
           </CardHeader>
           <CardContent className="h-[220px]">
             <ResponsiveContainer width="100%" height="100%">
               <RadarChart data={data.deptComparison}>
                 <PolarGrid stroke="rgba(255,255,255,0.1)" />
                 <PolarAngleAxis dataKey="subject" tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 10 }} />
-                <Radar name="Risk Level" dataKey="A" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.6} />
+                <Radar name="Current" dataKey="A" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.6} />
+                <Radar name="Goal" dataKey="B" stroke="hsl(var(--chart-2))" fill="hsl(var(--chart-2))" fillOpacity={0.2} />
               </RadarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
 
-        {/* 4. Trend Analysis & Forecast */}
+        {/* 3. Trend Analysis & 10. Forecast */}
         <Card className="md:col-span-2 lg:col-span-4 bg-card/50 border-white/5">
           <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2"><LineChartIcon className="w-5 h-5 text-primary" /> Risk Trend Forecast</CardTitle>
+            <CardTitle className="text-lg flex items-center gap-2"><LineChartIcon className="w-5 h-5 text-primary" /> Trend Analysis & AI Forecast</CardTitle>
+            <CardDescription className="text-[10px]">Predictive Risk Projection</CardDescription>
           </CardHeader>
           <CardContent className="h-[250px]">
             <ChartContainer config={chartConfig} className="h-full w-full">
-              <LineChart data={data.trendData}>
+              <AreaChart data={data.trendData}>
+                <defs>
+                  <linearGradient id="colorCurrent" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
-                <XAxis dataKey="month" axisLine={false} tickLine={false} />
+                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: 'white', fontSize: 10}} />
                 <YAxis hide domain={[0, 100]} />
-                <Line type="monotone" dataKey="current" stroke="hsl(var(--primary))" strokeWidth={3} dot={{ fill: "hsl(var(--primary))" }} />
+                <Tooltip content={<ChartTooltipContent />} />
+                <Area type="monotone" dataKey="current" stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorCurrent)" strokeWidth={3} />
                 <Line type="monotone" dataKey="forecast" stroke="hsl(var(--chart-2))" strokeDasharray="5 5" strokeWidth={2} dot={false} />
-                <ChartTooltip content={<ChartTooltipContent />} />
-              </LineChart>
+              </AreaChart>
             </ChartContainer>
           </CardContent>
         </Card>
 
-        {/* 5. Severity Distribution */}
+        {/* 5. Severity Distribution (Stacked Bar) */}
         <Card className="md:col-span-2 lg:col-span-2 bg-card/50 border-white/5">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2"><BarChart3 className="w-5 h-5 text-primary" /> Severity Distribution</CardTitle>
+            <CardDescription className="text-[10px]">Cumulative Domain Severity</CardDescription>
           </CardHeader>
           <CardContent className="h-[250px]">
             <ChartContainer config={chartConfig} className="h-full w-full">
-              <BarChart data={data.severityDistribution} layout="vertical">
+              <BarChart data={data.severityDistribution} layout="vertical" margin={{left: 20}}>
                 <XAxis type="number" hide />
                 <YAxis dataKey="category" type="category" axisLine={false} tickLine={false} tick={{ fill: "white", fontSize: 10 }} width={80} />
-                <Bar dataKey="Critical" stackId="a" fill="hsl(var(--destructive))" radius={[0, 0, 0, 0]} />
+                <Bar dataKey="Critical" stackId="a" fill="hsl(var(--destructive))" />
                 <Bar dataKey="High" stackId="a" fill="hsl(var(--chart-4))" />
                 <Bar dataKey="Medium" stackId="a" fill="hsl(var(--chart-1))" />
                 <Bar dataKey="Low" stackId="a" fill="hsl(var(--chart-3))" radius={[0, 4, 4, 0]} />
@@ -341,17 +381,18 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* 6. Mitigation Progress Tracker */}
+        {/* 11. Mitigation Progress Tracker */}
         <Card className="md:col-span-2 lg:col-span-3 bg-card/50 border-white/5">
           <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2"><ShieldCheck className="w-5 h-5 text-primary" /> Mitigation Progress Tracker</CardTitle>
+            <CardTitle className="text-lg flex items-center gap-2"><ShieldCheck className="w-5 h-5 text-primary" /> Mitigation Roadmap Progress</CardTitle>
+            <CardDescription className="text-[10px]">Strategic Completion Metrics</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             {data.mitigationProgress.map((p, i) => (
               <div key={i} className="space-y-2">
                 <div className="flex justify-between text-xs">
                   <span className="font-bold text-white">{p.name}</span>
-                  <span className="text-primary">{p.progress}%</span>
+                  <span className="text-primary font-mono">{p.progress}%</span>
                 </div>
                 <Progress value={p.progress} className="h-1.5" />
               </div>
@@ -359,7 +400,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* 7. Gap Analysis & 8. Category Breakdown */}
+        {/* 4. Gap Analysis Triangle & 6. Category Breakdown */}
         <Card className="md:col-span-2 lg:col-span-3 bg-card/50 border-white/5 flex flex-col md:flex-row p-6 gap-6">
           <div className="flex-1 space-y-4">
             <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2"><Activity className="w-4 h-4" /> Gap Analysis</h3>
@@ -371,7 +412,7 @@ export default function Dashboard() {
               </div>
               <div className="grid grid-cols-2 gap-8 w-full mt-12 text-center text-[10px] uppercase font-bold">
                 <div><div className="text-muted-foreground">Current</div><div className="text-white text-lg">{data.gapAnalysis.current}%</div></div>
-                <div><div className="text-muted-foreground">Desired</div><div className="text-white text-lg">{data.gapAnalysis.desired}%</div></div>
+                <div><div className="text-muted-foreground">Goal</div><div className="text-white text-lg">{data.gapAnalysis.desired}%</div></div>
               </div>
             </div>
           </div>
@@ -391,63 +432,69 @@ export default function Dashboard() {
           </div>
         </Card>
 
-        {/* 9. Risk Timeline */}
+        {/* 7. Risk Timeline */}
         <Card className="md:col-span-2 lg:col-span-6 bg-card/50 border-white/5">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2"><Calendar className="w-5 h-5 text-primary" /> Risk Intelligence Timeline</CardTitle>
+            <CardDescription className="text-[10px]">Detection & Projected Cycle History</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex justify-between items-center overflow-x-auto gap-8 pb-4">
+            <div className="flex justify-between items-start overflow-x-auto gap-12 pb-4 scrollbar-hide">
               {data.riskTimeline.map((item, i) => (
-                <div key={i} className="flex flex-col items-center min-w-[120px] relative">
-                  <div className="w-3 h-3 rounded-full bg-primary mb-2 shadow-[0_0_10px_rgba(212,175,55,1)]" />
-                  <div className="text-[10px] text-muted-foreground mb-1">{item.time}</div>
-                  <div className="text-[11px] font-bold text-white text-center">{item.event}</div>
-                  <Badge variant="outline" className="text-[8px] mt-2 opacity-50">{item.type}</Badge>
+                <div key={i} className="flex flex-col items-center min-w-[140px] relative text-center">
+                  <div className="w-4 h-4 rounded-full bg-primary mb-3 shadow-[0_0_15px_rgba(212,175,55,1)] flex items-center justify-center">
+                    <div className="w-1.5 h-1.5 rounded-full bg-black" />
+                  </div>
+                  <div className="text-[10px] text-muted-foreground mb-1 font-mono">{item.time}</div>
+                  <div className="text-[11px] font-bold text-white mb-2">{item.event}</div>
+                  <Badge variant="outline" className="text-[8px] uppercase tracking-tighter opacity-70 border-primary/20 text-primary">{item.type}</Badge>
                 </div>
               ))}
             </div>
           </CardContent>
         </Card>
 
-        {/* 10. Dependency Network (Visual representation) */}
+        {/* 15. Risk Dependency Network */}
         <Card className="md:col-span-2 lg:col-span-3 bg-card/50 border-white/5">
           <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2"><Network className="w-5 h-5 text-primary" /> Risk Dependency Network</CardTitle>
+            <CardTitle className="text-lg flex items-center gap-2"><Network className="w-5 h-5 text-primary" /> Dependency Network</CardTitle>
+            <CardDescription className="text-[10px]">Cross-Vector Risk Interconnectivity</CardDescription>
           </CardHeader>
-          <CardContent className="h-[200px] flex items-center justify-center relative">
-            <div className="absolute inset-0 opacity-10 flex items-center justify-center">
-              <Network className="w-48 h-48" />
+          <CardContent className="h-[220px] flex items-center justify-center relative">
+            <div className="absolute inset-0 opacity-5 flex items-center justify-center">
+              <Network className="w-64 h-64" />
             </div>
-            <div className="grid grid-cols-3 gap-4 relative z-10">
-              {['Cyber', 'Financial', 'Ops', 'Legal', 'Strategic'].map((d, i) => (
-                <div key={d} className="p-3 rounded-lg bg-white/5 border border-white/10 text-[10px] font-bold text-center hover:bg-primary/10 hover:border-primary/50 cursor-help transition-all">
-                  {d.toUpperCase()}
-                  <div className="mt-1 h-1 w-full bg-primary/20 rounded-full overflow-hidden"><div className="h-full bg-primary" style={{ width: `${Math.random() * 100}%` }} /></div>
+            <div className="grid grid-cols-3 gap-4 relative z-10 w-full">
+              {['Cyber', 'Financial', 'Ops', 'Legal', 'Strategic', 'Market'].map((d, i) => (
+                <div key={d} className="p-3 rounded-xl bg-white/5 border border-white/10 text-[10px] font-bold text-center hover:bg-primary/10 hover:border-primary/50 cursor-help transition-all group">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary group-hover:animate-ping" />
+                    {d.toUpperCase()}
+                  </div>
+                  <Progress value={40 + (i * 10)} className="h-1" />
                 </div>
               ))}
             </div>
           </CardContent>
         </Card>
 
-        {/* 11. Incident Frequency (Area Chart) */}
+        {/* 8. Incident Frequency & 14. Before/After Comparison */}
         <Card className="md:col-span-2 lg:col-span-3 bg-card/50 border-white/5">
           <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2"><Activity className="w-5 h-5 text-primary" /> Incident Frequency Map</CardTitle>
+            <CardTitle className="text-lg flex items-center gap-2"><TrendingUp className="w-5 h-5 text-primary" /> Risk Reduction Delta</CardTitle>
+            <CardDescription className="text-[10px]">Mitigation Impact Verification</CardDescription>
           </CardHeader>
-          <CardContent className="h-[200px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data.incidentFrequency}>
-                <defs>
-                  <linearGradient id="colorFreq" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <Area type="monotone" dataKey="count" stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorFreq)" />
+          <CardContent className="h-[220px]">
+            <ChartContainer config={chartConfig} className="h-full w-full">
+              <BarChart data={data.riskReduction}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                <XAxis dataKey="name" tick={{fill: 'white', fontSize: 9}} axisLine={false} tickLine={false} />
+                <YAxis hide />
                 <Tooltip content={<ChartTooltipContent />} />
-              </AreaChart>
-            </ResponsiveContainer>
+                <Bar dataKey="before" fill="rgba(255,255,255,0.1)" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="after" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ChartContainer>
           </CardContent>
         </Card>
 
@@ -464,7 +511,7 @@ export default function Dashboard() {
               <div className="h-1.5 w-full bg-primary transition-all group-hover:h-3" />
               <CardHeader className="p-5 pb-3">
                 <div className="flex items-center justify-between mb-2">
-                   <Badge variant="outline" className="text-primary border-primary/20">{analysis.overallRiskScore}%</Badge>
+                   <Badge variant="outline" className="text-primary border-primary/20 font-mono text-[10px]">{analysis.overallRiskScore}%</Badge>
                    <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-all" />
                 </div>
                 <CardTitle className="text-base font-bold text-white capitalize">{key}</CardTitle>
@@ -472,8 +519,8 @@ export default function Dashboard() {
               <CardContent className="p-5 pt-0">
                 <p className="text-[11px] leading-relaxed text-muted-foreground italic mb-4 line-clamp-3">"{analysis.summary}"</p>
                 <div className="flex flex-col gap-2 pt-4 border-t border-white/5">
-                  <Link href={`/agents/${key}`} className="text-[9px] text-primary font-black uppercase tracking-wider flex items-center justify-between">Cognitive Logs <ArrowRight className="w-3 h-3" /></Link>
-                  <Link href={`/risk/${key}`} className="text-[9px] text-muted-foreground font-black uppercase tracking-wider flex items-center justify-between">Risk Details <ArrowRight className="w-3 h-3" /></Link>
+                  <Link href={`/agents/${key}`} className="text-[9px] text-primary font-black uppercase tracking-wider flex items-center justify-between hover:translate-x-1 transition-transform">Cognitive Logs <ArrowRight className="w-3 h-3" /></Link>
+                  <Link href={`/risk/${key}`} className="text-[9px] text-muted-foreground font-black uppercase tracking-wider flex items-center justify-between hover:translate-x-1 transition-transform">Risk Details <ArrowRight className="w-3 h-3" /></Link>
                 </div>
               </CardContent>
             </Card>

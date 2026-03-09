@@ -59,6 +59,7 @@ const ComprehensiveRiskAnalysisOutputSchema = z.object({
   incidentFrequency: z.array(z.object({ day: z.string(), count: z.number() })),
   gapAnalysis: z.object({ current: z.number(), desired: z.number(), gap: z.number() }),
   riskTimeline: z.array(z.object({ time: z.string(), event: z.string(), type: z.string() })),
+  riskReduction: z.array(z.object({ name: z.string(), before: z.number(), after: z.number() })),
 });
 
 export type InitiateComprehensiveRiskAnalysisOutput = z.infer<typeof ComprehensiveRiskAnalysisOutputSchema>;
@@ -90,13 +91,15 @@ Operational Context (if available):
 
 Your mission is to find inconsistencies, risks, and anomalies.
 Generate comprehensive visualization data including:
-1. heatmapData: 25 points representing a 5x5 matrix of risk distribution.
-2. trendData: Historical (last 6 months) and forecast (next 3 months) risk levels.
+1. heatmapData: 25 points representing a 5x5 matrix of risk distribution. Each point should have impact (1-5), probability (1-5), count, and label.
+2. trendData: Historical (last 6 months) and forecast (next 3 months) risk levels (0-100).
 3. severityDistribution: Risks per domain split by severity level.
 4. mitigationProgress: Completion percentage for key mitigation plans.
 5. deptComparison: Radar data comparing risk across departments (Finance, Tech, Ops, Compliance, Sales).
-6. gapAnalysis: Numerical gap between current risk posture and strategic goals.
+6. gapAnalysis: Numerical gap between current risk posture and strategic goals (current vs desired vs gap).
 7. riskTimeline: Recent detections and projected future review cycles.
+8. incidentFrequency: Day-by-day count for the last 14 days.
+9. riskReduction: Data comparing risk score 'before' and 'after' proposed mitigations for top 5 risks.
 
 Identify specific risks per domain. Calculate scores. Summarize anomalies. Provide global strategies.`,
 });
@@ -115,7 +118,7 @@ const initiateComprehensiveRiskAnalysisFlow = ai.defineFlow(
         cyberStr: input.cybersecurityReports ? JSON.stringify(input.cybersecurityReports) : "No specific data provided",
         opsStr: input.operationalMetrics ? JSON.stringify(input.operationalMetrics) : "No specific data provided",
       });
-      if (!output) throw new Error('Analysis failed.');
+      if (!output) throw new Error('Analysis failed to return structured data.');
       return output;
     } catch (error: any) {
       console.error("Analysis Error:", error);
