@@ -25,12 +25,12 @@ import { Button } from "@/components/ui/button";
 import { 
   ChartContainer, 
   ChartTooltip, 
-  ChartTooltipContent 
+  ChartTooltipContent,
+  type ChartConfig
 } from "@/components/ui/chart";
 import { 
   Bar, 
   BarChart, 
-  ResponsiveContainer, 
   XAxis, 
   YAxis, 
   Cell
@@ -38,6 +38,32 @@ import {
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+
+const chartConfig = {
+  score: {
+    label: "Risk Score",
+  },
+  financial: {
+    label: "Financial",
+    color: "hsl(var(--chart-1))",
+  },
+  cybersecurity: {
+    label: "Cyber",
+    color: "hsl(var(--chart-2))",
+  },
+  operational: {
+    label: "Operational",
+    color: "hsl(var(--chart-3))",
+  },
+  compliance: {
+    label: "Compliance",
+    color: "hsl(var(--chart-4))",
+  },
+  strategicMarket: {
+    label: "Strategic",
+    color: "hsl(var(--chart-5))",
+  },
+} satisfies ChartConfig;
 
 export default function Dashboard() {
   const [loading, setLoading] = React.useState(true);
@@ -141,7 +167,7 @@ export default function Dashboard() {
             <CardDescription>Multi-Agent Threat Distribution</CardDescription>
           </CardHeader>
           <CardContent className="h-[240px]">
-            <ResponsiveContainer width="100%" height="100%">
+            <ChartContainer config={chartConfig} className="h-full w-full">
               <BarChart data={domainData}>
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} />
                 <YAxis hide domain={[0, 100]} />
@@ -152,7 +178,7 @@ export default function Dashboard() {
                 </Bar>
                 <ChartTooltip content={<ChartTooltipContent hideLabel />} />
               </BarChart>
-            </ResponsiveContainer>
+            </ChartContainer>
           </CardContent>
         </Card>
       </div>
