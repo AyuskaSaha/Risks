@@ -15,7 +15,8 @@ import {
   MessageSquareText,
   BadgeAlert,
   Scale,
-  Globe
+  Globe,
+  FileText
 } from "lucide-react";
 import {
   Sidebar,
@@ -43,14 +44,6 @@ const riskCategories = [
   { title: "Operational", url: "/risk/operational", icon: Zap },
   { title: "Compliance", url: "/risk/compliance", icon: Scale },
   { title: "Strategic", url: "/risk/strategicMarket", icon: Globe },
-];
-
-const agents = [
-  { title: "Financial Agent", url: "/agents/Financial", icon: Bot },
-  { title: "Cyber Agent", url: "/agents/Cybersecurity", icon: Bot },
-  { title: "Ops Agent", url: "/agents/Operational", icon: Bot },
-  { title: "Compliance Agent", url: "/agents/Compliance", icon: Bot },
-  { title: "Strategic Agent", url: "/agents/StrategicMarket", icon: Bot },
 ];
 
 export function AppSidebar() {
@@ -88,7 +81,7 @@ export function AppSidebar() {
         <SidebarSeparator />
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-muted-foreground/50">Risk Categories</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-muted-foreground/40 text-[10px] uppercase font-bold tracking-wider">Analysis Vectors</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {riskCategories.map((item) => (
@@ -108,31 +101,33 @@ export function AppSidebar() {
         <SidebarSeparator />
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-muted-foreground/50">Agent Debug</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-muted-foreground/40 text-[10px] uppercase font-bold tracking-wider">Context Documents</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
-              {agents.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={pathname === item.url} tooltip={item.title}>
-                    <Link href={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
+            <div className="px-2 space-y-1">
+              <div className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-white/5 cursor-not-allowed opacity-60">
+                <FileText className="w-4 h-4 text-blue-400" />
+                <span className="text-xs">SRS.pdf</span>
+              </div>
+              <div className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-white/5 cursor-not-allowed opacity-60">
+                <FileText className="w-4 h-4 text-purple-400" />
+                <span className="text-xs">BRD_v2.pdf</span>
+              </div>
+              <div className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-white/5 cursor-not-allowed opacity-60">
+                <Scale className="w-4 h-4 text-green-400" />
+                <span className="text-xs">Policy_Legal.pdf</span>
+              </div>
+            </div>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter className="p-4">
-        <div className="flex items-center gap-2 p-2 rounded-lg bg-sidebar-accent/50 group-data-[collapsible=icon]:hidden">
-          <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-            <Cpu className="w-4 h-4 text-white" />
+        <div className="flex items-center gap-2 p-3 rounded-xl bg-primary/5 border border-primary/10 group-data-[collapsible=icon]:hidden">
+          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
+            <Cpu className="w-4 h-4 text-black" />
           </div>
           <div className="flex flex-col">
-            <span className="text-xs font-semibold text-sidebar-foreground">System Status</span>
-            <span className="text-[10px] text-primary">All Agents Active</span>
+            <span className="text-[10px] font-bold text-white uppercase tracking-tighter">System Engine</span>
+            <span className="text-[10px] text-primary">Gemini 2.5 Active</span>
           </div>
         </div>
       </SidebarFooter>

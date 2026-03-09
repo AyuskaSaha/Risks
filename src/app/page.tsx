@@ -12,7 +12,13 @@ import {
   ArrowRight,
   Loader2,
   ListRestart,
-  ShieldAlert
+  ShieldAlert,
+  FileText,
+  Cpu,
+  Zap,
+  Fingerprint,
+  TrendingUp,
+  Scale
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -44,8 +50,7 @@ export default function Dashboard() {
       const result = await initiateComprehensiveRiskAnalysis(mockOrganizationalData);
       setData(result);
     } catch (e: any) {
-      console.error("Dashboard error:", e);
-      setError(e.message || "An unexpected error occurred while orchestrating agents.");
+      setError(e.message || "Analysis Interrupted");
     } finally {
       setLoading(false);
     }
@@ -57,11 +62,14 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center h-[80vh] space-y-4">
-        <Loader2 className="w-12 h-12 text-primary animate-spin" />
-        <div className="text-center">
-          <h2 className="text-xl font-semibold">Orchestrating Risk Agents...</h2>
-          <p className="text-muted-foreground max-w-md mx-auto">Connecting to Financial, Cyber, Operational, Compliance, and Strategic LLM agents for deep-vector analysis.</p>
+      <div className="flex flex-col items-center justify-center h-[80vh] space-y-6">
+        <div className="relative">
+          <Loader2 className="w-16 h-16 text-primary animate-spin" />
+          <Cpu className="w-6 h-6 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+        </div>
+        <div className="text-center space-y-2">
+          <h2 className="text-2xl font-bold text-white">Multi-Agent Orchestration</h2>
+          <p className="text-muted-foreground max-w-sm">Correlating SRS, BRD, and Legal docs with operational telemetry...</p>
         </div>
       </div>
     );
@@ -74,64 +82,71 @@ export default function Dashboard() {
           <ShieldAlert className="w-10 h-10 text-destructive" />
         </div>
         <div className="space-y-2">
-          <h2 className="text-2xl font-bold">Analysis Interrupted</h2>
+          <h2 className="text-2xl font-bold text-white">Analysis Interrupted</h2>
           <p className="text-muted-foreground max-w-lg">{error}</p>
         </div>
         <Button onClick={fetchData} className="gap-2">
           <ListRestart className="w-4 h-4" />
-          Retry Analysis
+          Retry Orchestration
         </Button>
       </div>
     );
   }
 
-  if (!data) return <div>No data available.</div>;
+  if (!data) return null;
 
   const domainData = [
-    { name: "Financial", score: data.domainAnalysis.financial.overallRiskScore, fill: "hsl(var(--chart-1))" },
-    { name: "Cyber", score: data.domainAnalysis.cybersecurity.overallRiskScore, fill: "hsl(var(--chart-2))" },
-    { name: "Operational", score: data.domainAnalysis.operational.overallRiskScore, fill: "hsl(var(--chart-3))" },
-    { name: "Compliance", score: data.domainAnalysis.compliance.overallRiskScore, fill: "hsl(var(--chart-4))" },
-    { name: "Strategic", score: data.domainAnalysis.strategicMarket.overallRiskScore, fill: "hsl(var(--chart-5))" },
+    { name: "Financial", score: data.domainAnalysis.financial.overallRiskScore, fill: "hsl(var(--chart-1))", icon: TrendingUp },
+    { name: "Cyber", score: data.domainAnalysis.cybersecurity.overallRiskScore, fill: "hsl(var(--chart-2))", icon: Fingerprint },
+    { name: "Operational", score: data.domainAnalysis.operational.overallRiskScore, fill: "hsl(var(--chart-3))", icon: Zap },
+    { name: "Compliance", score: data.domainAnalysis.compliance.overallRiskScore, fill: "hsl(var(--chart-4))", icon: Scale },
+    { name: "Strategic", score: data.domainAnalysis.strategicMarket.overallRiskScore, fill: "hsl(var(--chart-5))", icon: Activity },
   ];
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="flex items-center justify-between">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight font-headline">Risk Intelligence Dashboard</h1>
-          <p className="text-muted-foreground">Real-time multi-agent analysis for {mockOrganizationalData.companyName}.</p>
+          <h1 className="text-4xl font-extrabold tracking-tight text-white font-headline">Enterprise Command</h1>
+          <p className="text-muted-foreground">Deep-vector intelligence for {mockOrganizationalData.companyName}.</p>
         </div>
-        <Button onClick={fetchData} variant="outline" className="gap-2">
-          <ListRestart className="w-4 h-4" />
-          Refresh Analysis
-        </Button>
+        <div className="flex gap-2">
+          <div className="flex -space-x-2">
+            <div className="w-8 h-8 rounded-full bg-blue-500/20 border border-blue-500/50 flex items-center justify-center" title="SRS Loaded"><FileText className="w-4 h-4 text-blue-400" /></div>
+            <div className="w-8 h-8 rounded-full bg-purple-500/20 border border-purple-500/50 flex items-center justify-center" title="BRD Loaded"><FileText className="w-4 h-4 text-purple-400" /></div>
+            <div className="w-8 h-8 rounded-full bg-green-500/20 border border-green-500/50 flex items-center justify-center" title="Legal Loaded"><Scale className="w-4 h-4 text-green-400" /></div>
+          </div>
+          <Button onClick={fetchData} variant="outline" size="sm" className="gap-2 bg-white/5 hover:bg-white/10 border-white/10">
+            <ListRestart className="w-4 h-4" />
+            Re-Analyze
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="md:col-span-1 shadow-md border-primary/20">
+        <Card className="md:col-span-1 bg-card/50 backdrop-blur-sm border-primary/20">
           <CardHeader>
-            <CardTitle>Overall Risk Index</CardTitle>
-            <CardDescription>Synthesized organizational risk score</CardDescription>
+            <CardTitle className="text-lg">Aggregate Risk Index</CardTitle>
+            <CardDescription>Synthesized Organizational Posture</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col items-center justify-center pt-2">
             <RiskGauge score={data.overallRiskIndex} level={data.overallRiskLevel} />
           </CardContent>
         </Card>
 
-        <Card className="md:col-span-2 shadow-md">
+        <Card className="md:col-span-2 bg-card/30 backdrop-blur-sm border-white/5">
           <CardHeader>
-            <CardTitle>Category Distribution</CardTitle>
-            <CardDescription>Individual risk scores across operational domains</CardDescription>
+            <CardTitle className="text-lg">Domain Heatmap</CardTitle>
+            <CardDescription>Cross-Functional Score Distribution</CardDescription>
           </CardHeader>
-          <CardContent className="h-64">
+          <CardContent className="h-[240px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={domainData}>
-                <XAxis dataKey="name" axisLine={false} tickLine={false} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} />
                 <YAxis hide domain={[0, 100]} />
-                <Bar dataKey="score" radius={[4, 4, 0, 0]}>
+                <Bar dataKey="score" radius={[6, 6, 0, 0]}>
                   {domainData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.fill} />
+                    <Cell key={`cell-${index}`} fill={entry.fill} fillOpacity={0.8} />
                   ))}
                 </Bar>
               </BarChart>
@@ -140,93 +155,78 @@ export default function Dashboard() {
         </Card>
       </div>
 
+      <div className="space-y-4">
+        <h2 className="text-xl font-bold text-white flex items-center gap-2">
+          <Cpu className="w-5 h-5 text-primary" />
+          Specialized Agent Insights
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          {domainData.map((domain) => {
+            const agentKey = domain.name.toLowerCase() === 'cyber' ? 'cybersecurity' : 
+                             domain.name.toLowerCase() === 'strategic' ? 'strategicMarket' : 
+                             domain.name.toLowerCase();
+            const analysis = data.domainAnalysis[agentKey as keyof typeof data.domainAnalysis];
+            
+            return (
+              <Card key={domain.name} className="bg-card/40 border-white/5 hover:border-primary/40 transition-all group overflow-hidden">
+                <div className="h-1 w-full" style={{ backgroundColor: domain.fill }} />
+                <CardHeader className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <domain.icon className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                    <Badge variant="outline" className="text-[10px] bg-white/5">{analysis.overallRiskScore}%</Badge>
+                  </div>
+                  <CardTitle className="text-sm font-bold">{domain.name} Agent</CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 pt-0">
+                  <p className="text-[11px] leading-relaxed text-muted-foreground line-clamp-3 italic">
+                    "{analysis.summary}"
+                  </p>
+                  <Link href={`/risk/${agentKey}`} className="inline-flex items-center gap-1 text-[10px] text-primary font-bold mt-4 hover:underline">
+                    FULL AGENT REPORT <ArrowRight className="w-3 h-3" />
+                  </Link>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="shadow-md">
+        <Card className="bg-card/30 border-white/5">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <CardTitle>Anomaly Detection Summary</CardTitle>
-              <CardDescription>Critical findings across all domains</CardDescription>
+              <CardTitle className="text-lg">Critical Anomalies</CardTitle>
+              <CardDescription>Cross-Document Discrepancies</CardDescription>
             </div>
             <Activity className="w-5 h-5 text-primary" />
           </CardHeader>
           <CardContent>
-            <p className="text-sm leading-relaxed text-muted-foreground bg-muted/30 p-4 rounded-lg border">
+            <p className="text-sm leading-relaxed text-muted-foreground bg-white/5 p-4 rounded-xl border border-white/10">
               {data.anomaliesSummary}
             </p>
-            <div className="mt-6 space-y-4">
-               {Object.entries(data.domainAnalysis).map(([key, domain]) => (
-                  <div key={key} className="flex items-center justify-between">
-                    <span className="text-sm font-medium capitalize">{key}</span>
-                    <Badge variant={domain.overallRiskScore > 70 ? "destructive" : "secondary"}>
-                      {domain.overallRiskScore}%
-                    </Badge>
-                  </div>
-               ))}
-            </div>
           </CardContent>
         </Card>
 
-        <Card className="shadow-md">
+        <Card className="bg-card/30 border-white/5">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <CardTitle>Global Mitigation Strategies</CardTitle>
-              <CardDescription>High-level strategic recommendations</CardDescription>
+              <CardTitle className="text-lg">Global Mitigation Plan</CardTitle>
+              <CardDescription>Consolidated Strategic Roadmap</CardDescription>
             </div>
-            <ShieldCheck className="w-5 h-5 text-green-500" />
+            <ShieldCheck className="w-5 h-5 text-primary" />
           </CardHeader>
           <CardContent>
-            <ul className="space-y-3">
+            <div className="space-y-3">
               {data.globalMitigationStrategies.map((strategy, idx) => (
-                <li key={idx} className="flex items-start gap-3 text-sm">
-                  <div className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" />
-                  <span>{strategy}</span>
-                </li>
+                <div key={idx} className="flex items-start gap-3 p-2 rounded-lg bg-white/5 border border-white/5">
+                  <div className="w-5 h-5 rounded bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary shrink-0">{idx + 1}</div>
+                  <span className="text-xs text-muted-foreground leading-snug">{strategy}</span>
+                </div>
               ))}
-            </ul>
+            </div>
           </CardContent>
         </Card>
       </div>
-
-      <Card className="shadow-md">
-        <CardHeader>
-          <CardTitle>Top Detected Risks</CardTitle>
-          <CardDescription>Prioritized list of identified threats</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {Object.entries(data.domainAnalysis).flatMap(([domainKey, domain]) => 
-              domain.risks.filter(r => r.impact === "Critical" || r.probability === "High").map((risk, idx) => (
-                <div key={`${domainKey}-${idx}`} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/30 transition-colors group">
-                  <div className="flex items-center gap-4">
-                    <div className={cn(
-                      "p-2 rounded-full",
-                      risk.impact === "Critical" ? "bg-red-100 text-red-600" : "bg-orange-100 text-orange-600"
-                    )}>
-                      <AlertTriangle className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-sm">{risk.name}</h4>
-                      <p className="text-xs text-muted-foreground line-clamp-1">{risk.description}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-6">
-                    <div className="hidden md:block text-right">
-                      <div className="text-[10px] uppercase font-bold text-muted-foreground">Domain</div>
-                      <div className="text-xs font-medium capitalize">{domainKey}</div>
-                    </div>
-                    <Badge variant={risk.impact === "Critical" ? "destructive" : "secondary"}>{risk.impact}</Badge>
-                    <Link href={`/risk/${domainKey}`}>
-                      <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 transition-opacity">
-                        <ArrowRight className="w-4 h-4" />
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
-              ))
-            ).slice(0, 5)}
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }

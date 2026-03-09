@@ -1,7 +1,7 @@
 'use server';
 /**
  * @fileOverview This file implements the Genkit flow for initiating a comprehensive organizational risk analysis.
- * It uses a single high-fidelity prompt to simulate a multi-agent orchestration.
+ * It processes core business documents (SRS, BRD, Legal) alongside operational data.
  */
 
 import {ai} from '@/ai/genkit';
@@ -11,44 +11,44 @@ import {z} from 'genkit';
 
 const RiskItemSchema = z.object({
   name: z.string().describe('Name of the identified risk.'),
-  description: z.string().describe('Detailed description of the risk, including specific anomalies detected.'),
-  probability: z.enum(['Low', 'Medium', 'High']).describe('Predicted probability of the risk occurring.'),
-  impact: z.enum(['Low', 'Medium', 'High', 'Critical']).describe('Potential impact if the risk materializes.'),
+  description: z.string().describe('Detailed description of the risk.'),
+  probability: z.enum(['Low', 'Medium', 'High']).describe('Predicted probability.'),
+  impact: z.enum(['Low', 'Medium', 'High', 'Critical']).describe('Potential impact level.'),
   mitigationStrategy: z.string().describe('Proposed strategy to mitigate the risk.'),
-  anomalyDetected: z.boolean().describe('Whether this risk represents an anomaly in the data.'),
-  reasoning: z.string().describe('The reasoning behind the risk identification.'),
+  anomalyDetected: z.boolean().describe('Whether this represents a statistical or logical anomaly.'),
+  reasoning: z.string().describe('The reasoning behind the identification.'),
 });
 
 const AgentOutputSchema = z.object({
-  risks: z.array(RiskItemSchema).describe('List of identified risks for this domain.'),
-  summary: z.string().describe('Overall summary of risk findings for this domain.'),
+  risks: z.array(RiskItemSchema).describe('List of identified risks.'),
+  summary: z.string().describe('Agent-specific summary of findings.'),
   overallRiskScore: z.number().min(0).max(100).describe('A numerical score for the risk level (0-100).'),
 });
 
 const OrganizationalDataInputSchema = z.object({
   companyName: z.string().describe('The name of the organization.'),
+  srsDocument: z.string().optional().describe('Content of the Software Requirements Specification.'),
+  brdDocument: z.string().optional().describe('Content of the Business Requirements Document.'),
+  legalPolicyDocument: z.string().optional().describe('Content of Company Policies or Legal Frameworks.'),
   financialData: z.record(z.string(), z.any()).describe('Financial data.'),
   cybersecurityReports: z.record(z.string(), z.any()).describe('Cybersecurity reports.'),
   operationalMetrics: z.record(z.string(), z.any()).describe('Operational metrics.'),
-  complianceDocuments: z.record(z.string(), z.any()).describe('Compliance documents.'),
-  strategicMarketReports: z.record(z.string(), z.any()).describe('Strategic and market reports.'),
 });
 
 export type InitiateComprehensiveRiskAnalysisInput = z.infer<typeof OrganizationalDataInputSchema>;
 
 const ComprehensiveRiskAnalysisOutputSchema = z.object({
-  overallRiskIndex: z.number().min(0).max(100).describe('Aggregated organizational risk score (0-100).'),
-  overallRiskLevel: z.enum(['Low', 'Medium', 'High', 'Critical']).describe('Categorical representation of overall risk.'),
-  anomaliesSummary: z.string().describe('Summary of critical anomalies detected across all domains.'),
-  globalMitigationStrategies: z.array(z.string()).describe('High-level mitigation strategies.'),
+  overallRiskIndex: z.number().min(0).max(100),
+  overallRiskLevel: z.enum(['Low', 'Medium', 'High', 'Critical']),
+  anomaliesSummary: z.string(),
+  globalMitigationStrategies: z.array(z.string()),
   domainAnalysis: z.object({
     financial: AgentOutputSchema,
     cybersecurity: AgentOutputSchema,
     operational: AgentOutputSchema,
     compliance: AgentOutputSchema,
     strategicMarket: AgentOutputSchema,
-  }).describe('Detailed analysis for each domain.'),
-  aggregatedReasoning: z.string().describe('Comprehensive reasoning for the overall assessment.'),
+  }),
 });
 
 export type InitiateComprehensiveRiskAnalysisOutput = z.infer<typeof ComprehensiveRiskAnalysisOutputSchema>;
@@ -62,27 +62,29 @@ const comprehensiveRiskAnalysisPrompt = ai.definePrompt({
       financialStr: z.string(),
       cyberStr: z.string(),
       opsStr: z.string(),
-      compStr: z.string(),
-      stratStr: z.string(),
     })
   },
   output: { schema: ComprehensiveRiskAnalysisOutputSchema },
-  prompt: `You are the IntelliRisk AI Orchestrator. Your task is to perform a deep-vector risk analysis for "{{companyName}}" by simulating five specialized risk agents:
+  prompt: `You are the IntelliRisk AI Orchestrator. Perform a deep-vector risk analysis for "{{companyName}}".
 
-1. Financial Agent: Analyzes balance sheets, cash flows, and unusual outflows.
-2. Cybersecurity Agent: Reviews vulnerability scans and incident logs.
-3. Operational Agent: Evaluates supply chain latency and production efficiency.
-4. Compliance Agent: Checks policy adherence and regulatory changes.
-5. Strategic Agent: Monitors market share and competitor moves.
+Contextual Documents:
+- SRS (Requirements): {{{srsDocument}}}
+- BRD (Business Goals): {{{brdDocument}}}
+- Legal/Policy: {{{legalPolicyDocument}}}
 
-Organizational Data provided:
+Operational Data:
 - Financial: {{{financialStr}}}
 - Cyber: {{{cyberStr}}}
 - Operational: {{{opsStr}}}
-- Compliance: {{{compStr}}}
-- Strategic: {{{stratStr}}}
 
-Please provide a structured, holistic risk profile. For each domain, identify specific risks (at least 2-3), detect anomalies, and calculate a domain-specific risk score. Finally, aggregate these into an overall organizational risk index and global mitigation strategy.`,
+Simulate five specialized agents:
+1. Financial: Analyze cash flow vs document projections.
+2. Cyber: Vulnerabilities vs policy requirements.
+3. Operational: Production vs SRS/BRD benchmarks.
+4. Compliance: Operations vs Legal/Policy documents.
+5. Strategic: Alignment with BRD goals.
+
+Identify 2-3 specific risks per domain. Calculate scores. Summarize anomalies. Provide global strategies.`,
 });
 
 const initiateComprehensiveRiskAnalysisFlow = ai.defineFlow(
@@ -93,25 +95,18 @@ const initiateComprehensiveRiskAnalysisFlow = ai.defineFlow(
   },
   async (input) => {
     try {
-      // Small delay to help with potential rapid refresh rate limiting
       await new Promise(resolve => setTimeout(resolve, 500));
-      
       const { output } = await comprehensiveRiskAnalysisPrompt({
         ...input,
         financialStr: JSON.stringify(input.financialData),
         cyberStr: JSON.stringify(input.cybersecurityReports),
         opsStr: JSON.stringify(input.operationalMetrics),
-        compStr: JSON.stringify(input.complianceDocuments),
-        stratStr: JSON.stringify(input.strategicMarketReports),
       });
-      if (!output) throw new Error('Analysis failed to generate a response.');
+      if (!output) throw new Error('Analysis failed.');
       return output;
     } catch (error: any) {
-      console.error("Genkit Flow Error:", error);
-      if (error.message?.includes('429') || error.message?.includes('RESOURCE_EXHAUSTED')) {
-        throw new Error("Rate limit exceeded. Please wait a few seconds before retrying the analysis.");
-      }
-      throw new Error(`Risk Agent Orchestration failed: ${error.message || 'Unknown error'}`);
+      console.error("Analysis Error:", error);
+      throw new Error(`Orchestration failed: ${error.message}`);
     }
   }
 );
