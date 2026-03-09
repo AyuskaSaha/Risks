@@ -1,9 +1,7 @@
-
 "use client";
 
 import * as React from "react";
-import { initiateComprehensiveRiskAnalysis, InitiateComprehensiveRiskAnalysisOutput } from "@/ai/flows/initiate-comprehensive-risk-analysis";
-import { mockOrganizationalData } from "@/lib/mock-data";
+import { initiateComprehensiveRiskAnalysis, InitiateComprehensiveRiskAnalysisOutput, InitiateComprehensiveRiskAnalysisInput } from "@/ai/flows/initiate-comprehensive-risk-analysis";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { RiskGauge } from "@/components/dashboard/risk-gauge";
 import { 
@@ -19,7 +17,9 @@ import {
   Zap,
   TrendingUp,
   Scale,
-  Globe
+  Globe,
+  UploadCloud,
+  ChevronRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -37,7 +37,9 @@ import {
 } from "recharts";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 const chartConfig = {
   score: {
@@ -66,28 +68,139 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export default function Dashboard() {
-  const [loading, setLoading] = React.useState(true);
+  const [loading, setLoading] = React.useState(false);
+  const [analyzing, setAnalyzing] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [data, setData] = React.useState<InitiateComprehensiveRiskAnalysisOutput | null>(null);
+  const [showSetup, setShowSetup] = React.useState(true);
 
-  const fetchData = async () => {
-    setLoading(true);
+  const [formData, setFormData] = React.useState<InitiateComprehensiveRiskAnalysisInput>({
+    companyName: "Acme Corp",
+    srsDocument: "",
+    brdDocument: "",
+    legalPolicyDocument: "",
+    proposalDocument: "",
+  });
+
+  const handleStartAnalysis = async () => {
+    setAnalyzing(true);
     setError(null);
     try {
-      const result = await initiateComprehensiveRiskAnalysis(mockOrganizationalData);
+      const result = await initiateComprehensiveRiskAnalysis(formData);
       setData(result);
+      setShowSetup(false);
     } catch (e: any) {
       setError(e.message || "Analysis Interrupted");
     } finally {
-      setLoading(false);
+      setAnalyzing(false);
     }
   };
 
-  React.useEffect(() => {
-    fetchData();
-  }, []);
+  const domainData = data ? [
+    { id: 'financial', name: "Financial", score: data.domainAnalysis.financial.overallRiskScore, fill: "hsl(var(--chart-1))", icon: TrendingUp },
+    { id: 'cybersecurity', name: "Cyber", score: data.domainAnalysis.cybersecurity.overallRiskScore, fill: "hsl(var(--chart-2))", icon: ShieldCheck },
+    { id: 'operational', name: "Operational", score: data.domainAnalysis.operational.overallRiskScore, fill: "hsl(var(--chart-3))", icon: Zap },
+    { id: 'compliance', name: "Compliance", score: data.domainAnalysis.compliance.overallRiskScore, fill: "hsl(var(--chart-4))", icon: Scale },
+    { id: 'strategicMarket', name: "Strategic", score: data.domainAnalysis.strategicMarket.overallRiskScore, fill: "hsl(var(--chart-5))", icon: Globe },
+  ] : [];
 
-  if (loading) {
+  if (showSetup) {
+    return (
+      <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-700">
+        <div className="text-center space-y-2">
+          <h1 className="text-4xl font-extrabold tracking-tight text-white font-headline">Intelligence Setup</h1>
+          <p className="text-muted-foreground">Provide the core documents for multi-agent risk orchestration.</p>
+        </div>
+
+        <Card className="bg-card/50 border-primary/20 shadow-2xl overflow-hidden">
+          <div className="h-2 w-full bg-gradient-to-r from-primary/10 via-primary to-primary/10" />
+          <CardHeader>
+            <CardTitle className="text-xl flex items-center gap-2">
+              <UploadCloud className="w-5 h-5 text-primary" />
+              Strategic Document Entry
+            </CardTitle>
+            <CardDescription>Enter the raw text content for cross-correlation analysis.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-2">
+              <Label className="text-xs uppercase font-bold text-muted-foreground">Organization Name</Label>
+              <Input 
+                value={formData.companyName} 
+                onChange={e => setFormData({...formData, companyName: e.target.value})}
+                placeholder="e.g., Global Horizon Logistics"
+                className="bg-white/5 border-white/10 text-white"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label className="text-xs uppercase font-bold text-muted-foreground">SRS Document Content</Label>
+                <Textarea 
+                  value={formData.srsDocument}
+                  onChange={e => setFormData({...formData, srsDocument: e.target.value})}
+                  placeholder="System requirements, uptime targets, technical constraints..."
+                  className="bg-white/5 border-white/10 text-white min-h-[150px]"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs uppercase font-bold text-muted-foreground">BRD Document Content</Label>
+                <Textarea 
+                  value={formData.brdDocument}
+                  onChange={e => setFormData({...formData, brdDocument: e.target.value})}
+                  placeholder="Business goals, efficiency targets, expansion plans..."
+                  className="bg-white/5 border-white/10 text-white min-h-[150px]"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs uppercase font-bold text-muted-foreground">Legal & Policy Framework</Label>
+                <Textarea 
+                  value={formData.legalPolicyDocument}
+                  onChange={e => setFormData({...formData, legalPolicyDocument: e.target.value})}
+                  placeholder="Compliance requirements, data privacy, financial controls..."
+                  className="bg-white/5 border-white/10 text-white min-h-[150px]"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs uppercase font-bold text-muted-foreground">Strategic Proposal</Label>
+                <Textarea 
+                  value={formData.proposalDocument}
+                  onChange={e => setFormData({...formData, proposalDocument: e.target.value})}
+                  placeholder="Proposed roadmaps, vendor agreements, strategic vision..."
+                  className="bg-white/5 border-white/10 text-white min-h-[150px]"
+                />
+              </div>
+            </div>
+
+            <div className="pt-4">
+              <Button 
+                onClick={handleStartAnalysis} 
+                disabled={analyzing || !formData.srsDocument || !formData.brdDocument}
+                className="w-full h-12 bg-primary hover:bg-primary/90 text-black font-bold text-lg gap-2"
+              >
+                {analyzing ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Orchestrating Agents...
+                  </>
+                ) : (
+                  <>
+                    <Activity className="w-5 h-5" />
+                    Initialize AI Analysis
+                    <ChevronRight className="w-5 h-5" />
+                  </>
+                )}
+              </Button>
+              {(!formData.srsDocument || !formData.brdDocument) && (
+                <p className="text-[10px] text-center mt-2 text-muted-foreground uppercase tracking-widest">Please fill in at least SRS and BRD to begin</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (analyzing) {
     return (
       <div className="flex flex-col items-center justify-center h-[80vh] space-y-6">
         <div className="relative">
@@ -96,7 +209,7 @@ export default function Dashboard() {
         </div>
         <div className="text-center space-y-2">
           <h2 className="text-2xl font-bold text-white">Multi-Agent Orchestration</h2>
-          <p className="text-muted-foreground max-w-sm">Correlating SRS, BRD, and Legal docs with operational telemetry...</p>
+          <p className="text-muted-foreground max-w-sm">Correlating SRS, BRD, Legal, and Proposal telemetry for {formData.companyName}...</p>
         </div>
       </div>
     );
@@ -112,9 +225,9 @@ export default function Dashboard() {
           <h2 className="text-2xl font-bold text-white">Analysis Interrupted</h2>
           <p className="text-muted-foreground max-w-lg">{error}</p>
         </div>
-        <Button onClick={fetchData} className="gap-2">
+        <Button onClick={() => setShowSetup(true)} className="gap-2">
           <ListRestart className="w-4 h-4" />
-          Retry Orchestration
+          Adjust Inputs
         </Button>
       </div>
     );
@@ -122,30 +235,17 @@ export default function Dashboard() {
 
   if (!data) return null;
 
-  const domainData = [
-    { id: 'financial', name: "Financial", score: data.domainAnalysis.financial.overallRiskScore, fill: "hsl(var(--chart-1))", icon: TrendingUp },
-    { id: 'cybersecurity', name: "Cyber", score: data.domainAnalysis.cybersecurity.overallRiskScore, fill: "hsl(var(--chart-2))", icon: ShieldCheck },
-    { id: 'operational', name: "Operational", score: data.domainAnalysis.operational.overallRiskScore, fill: "hsl(var(--chart-3))", icon: Zap },
-    { id: 'compliance', name: "Compliance", score: data.domainAnalysis.compliance.overallRiskScore, fill: "hsl(var(--chart-4))", icon: Scale },
-    { id: 'strategicMarket', name: "Strategic", score: data.domainAnalysis.strategicMarket.overallRiskScore, fill: "hsl(var(--chart-5))", icon: Globe },
-  ];
-
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-4xl font-extrabold tracking-tight text-white font-headline">Intelligence Command</h1>
-          <p className="text-muted-foreground">Orchestrated analysis for {mockOrganizationalData.companyName}.</p>
+          <p className="text-muted-foreground">Orchestrated analysis for {formData.companyName}.</p>
         </div>
         <div className="flex gap-2">
-          <div className="flex -space-x-2">
-            <div className="w-8 h-8 rounded-full bg-blue-500/20 border border-blue-500/50 flex items-center justify-center" title="SRS Loaded"><FileText className="w-4 h-4 text-blue-400" /></div>
-            <div className="w-8 h-8 rounded-full bg-purple-500/20 border border-purple-500/50 flex items-center justify-center" title="BRD Loaded"><FileText className="w-4 h-4 text-purple-400" /></div>
-            <div className="w-8 h-8 rounded-full bg-green-500/20 border border-green-500/50 flex items-center justify-center" title="Legal Loaded"><Scale className="w-4 h-4 text-green-400" /></div>
-          </div>
-          <Button onClick={fetchData} variant="outline" size="sm" className="gap-2 bg-white/5 hover:bg-white/10 border-white/10 text-white">
+          <Button onClick={() => setShowSetup(true)} variant="outline" size="sm" className="gap-2 bg-white/5 hover:bg-white/10 border-white/10 text-white">
             <ListRestart className="w-4 h-4" />
-            Recalibrate
+            Recalibrate Inputs
           </Button>
         </div>
       </div>
