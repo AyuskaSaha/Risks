@@ -33,7 +33,8 @@ import {
   Workflow,
   Zap,
   Split,
-  ScatterChart as BubbleIcon
+  ScatterChart as BubbleIcon,
+  HelpCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -73,6 +74,7 @@ import { mockOrganizationalData } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { TooltipProvider, Tooltip as UITooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 const chartConfig = {
   score: { label: "Risk Score" },
@@ -155,15 +157,20 @@ export default function Dashboard() {
 
     try {
       const result = await initiateComprehensiveRiskAnalysis(formData);
-      setData(result);
-      setShowSetup(false);
+      if (result) {
+        setData(result);
+        setShowSetup(false);
+      } else {
+        throw new Error("Empty response from analysis engine.");
+      }
     } catch (e: any) {
+      console.error("Analysis Error:", e);
       const isRateLimit = e.message?.includes('429') || e.message?.includes('RESOURCE_EXHAUSTED');
       if (isRateLimit) {
         setError("AI Engine quota reached (Rate Limit). System is cooling down. You can wait or run a simulated analysis.");
         setRetryTimer(30);
       } else {
-        setError(e.message || "Risk Agent Orchestration failed.");
+        setError("An unexpected response was received from the server. Please try running a Simulated Analysis.");
       }
       setShowSetup(true);
     } finally {
@@ -617,8 +624,23 @@ export default function Dashboard() {
         {/* 14. Dependency Network Visualization */}
         <Card className="md:col-span-2 lg:col-span-3 bg-card/50 border-white/5">
           <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2 text-white"><Network className="w-5 h-5 text-primary" /> Dependency Network</CardTitle>
-            <CardDescription className="text-[10px]">Cross-Vector Interlinks</CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-lg flex items-center gap-2 text-white"><Network className="w-5 h-5 text-primary" /> Dependency Network</CardTitle>
+                <CardDescription className="text-[10px]">Cross-Vector Interlinks (Cascading Risks)</CardDescription>
+              </div>
+              <TooltipProvider>
+                <UITooltip>
+                  <TooltipTrigger asChild>
+                    <HelpCircle className="w-4 h-4 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs p-4 space-y-2">
+                    <p className="font-bold text-primary">What is this?</p>
+                    <p className="text-xs">This indicates how risks "cascade" across departments. A failure in Cyber doesn't stay in Cyber—it triggers Financial and Compliance risks. The lines represent high-probability contagion paths.</p>
+                  </TooltipContent>
+                </UITooltip>
+              </TooltipProvider>
+            </div>
           </CardHeader>
           <CardContent className="h-[220px] flex items-center justify-center relative overflow-hidden">
              <div className="absolute inset-0 flex items-center justify-center opacity-10"><Network className="w-40 h-40" /></div>
@@ -627,6 +649,9 @@ export default function Dashboard() {
                  <div key={d} className="p-3 bg-white/5 border border-white/10 rounded-xl text-center group hover:bg-primary/10 transition-all cursor-crosshair">
                    <Zap className="w-4 h-4 text-primary mx-auto mb-1 group-hover:scale-110" />
                    <span className="text-[8px] font-black uppercase text-white">{d}</span>
+                   <div className="hidden group-hover:block absolute -top-8 left-0 right-0 bg-black/90 border border-primary/20 p-2 rounded text-[10px] text-primary-foreground z-20">
+                     Cascades to {d === 'Cyber' ? 'Finance & Legal' : 'Global Baseline'}
+                   </div>
                  </div>
                ))}
              </div>
