@@ -2,6 +2,7 @@
 /**
  * @fileOverview This file implements the Genkit flow for initiating a comprehensive organizational risk analysis.
  * It processes core business documents (SRS, BRD, Legal, Proposal) alongside operational data.
+ * Includes a retry mechanism to handle Gemini API rate limits (429 errors).
  */
 
 import {ai} from '@/ai/genkit';
@@ -50,7 +51,7 @@ const ComprehensiveRiskAnalysisOutputSchema = z.object({
     compliance: AgentOutputSchema,
     strategicMarket: AgentOutputSchema,
   }),
-  // Visualization Data
+  // 15 Visualization Data Points
   heatmapData: z.array(z.object({ impact: z.number(), probability: z.number(), count: z.number(), label: z.string() })),
   trendData: z.array(z.object({ month: z.string(), current: z.number(), forecast: z.number() })),
   severityDistribution: z.array(z.object({ category: z.string(), Low: z.number(), Medium: z.number(), High: z.number(), Critical: z.number() })),
@@ -84,25 +85,36 @@ Primary Analysis Documents:
 - Legal/Policy: {{{legalPolicyDocument}}}
 - Proposal: {{{proposalDocument}}}
 
-Operational Context (if available):
-- Financial: {{{financialStr}}}
-- Cyber: {{{cyberStr}}}
-- Operational: {{{opsStr}}}
-
-Your mission is to find inconsistencies, risks, and anomalies.
+Your mission is to find inconsistencies, risks, and anomalies across all 15 vectors.
 Generate comprehensive visualization data including:
-1. heatmapData: 25 points representing a 5x5 matrix of risk distribution. Each point should have impact (1-5), probability (1-5), count, and label.
-2. trendData: Historical (last 6 months) and forecast (next 3 months) risk levels (0-100).
+1. heatmapData: Distribution of risks across a 5x5 matrix.
+2. trendData: Historical (last 6 months) and forecast risk levels.
 3. severityDistribution: Risks per domain split by severity level.
 4. mitigationProgress: Completion percentage for key mitigation plans.
 5. deptComparison: Radar data comparing risk across departments (Finance, Tech, Ops, Compliance, Sales).
-6. gapAnalysis: Numerical gap between current risk posture and strategic goals (current vs desired vs gap).
-7. riskTimeline: Recent detections and projected future review cycles.
+6. gapAnalysis: Current state vs desired vs gap.
+7. riskTimeline: Recent detections and projected future cycles.
 8. incidentFrequency: Day-by-day count for the last 14 days.
-9. riskReduction: Data comparing risk score 'before' and 'after' proposed mitigations for top 5 risks.
+9. riskReduction: Before and after proposed mitigations.
 
-Identify specific risks per domain. Calculate scores. Summarize anomalies. Provide global strategies.`,
+Cross-reference documents to find hidden risks (e.g., if Proposal violates Legal).`,
 });
+
+/**
+ * Helper function for exponential backoff on 429 errors.
+ */
+async function withRetry<T>(fn: () => Promise<T>, retries = 3, delay = 5000): Promise<T> {
+  try {
+    return await fn();
+  } catch (error: any) {
+    if (retries > 0 && (error.message?.includes('429') || error.message?.includes('RESOURCE_EXHAUSTED'))) {
+      console.warn(`Rate limit hit. Retrying in ${delay / 1000}s...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+      return withRetry(fn, retries - 1, delay * 2);
+    }
+    throw error;
+  }
+}
 
 const initiateComprehensiveRiskAnalysisFlow = ai.defineFlow(
   {
@@ -111,7 +123,7 @@ const initiateComprehensiveRiskAnalysisFlow = ai.defineFlow(
     outputSchema: ComprehensiveRiskAnalysisOutputSchema,
   },
   async (input) => {
-    try {
+    return withRetry(async () => {
       const { output } = await comprehensiveRiskAnalysisPrompt({
         ...input,
         financialStr: input.financialData ? JSON.stringify(input.financialData) : "No specific data provided",
@@ -120,10 +132,7 @@ const initiateComprehensiveRiskAnalysisFlow = ai.defineFlow(
       });
       if (!output) throw new Error('Analysis failed to return structured data.');
       return output;
-    } catch (error: any) {
-      console.error("Analysis Error:", error);
-      throw new Error(`Orchestration failed: ${error.message}`);
-    }
+    });
   }
 );
 
