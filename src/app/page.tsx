@@ -77,7 +77,6 @@ export default function Dashboard() {
   const [data, setData] = React.useState<InitiateComprehensiveRiskAnalysisOutput | null>(null);
   const [showSetup, setShowSetup] = React.useState(true);
 
-  // Simulation state for uploaded files
   const [uploadedFiles, setUploadedFiles] = React.useState<{
     srs: boolean;
     brd: boolean;
@@ -99,11 +98,19 @@ export default function Dashboard() {
   });
 
   const handleFileUpload = (type: keyof typeof uploadedFiles) => {
+    const fieldMapping = {
+      srs: 'srsDocument',
+      brd: 'brdDocument',
+      legal: 'legalPolicyDocument',
+      proposal: 'proposalDocument'
+    } as const;
+
+    const mockField = fieldMapping[type];
+    
     setUploadedFiles(prev => ({ ...prev, [type]: true }));
-    const mockField = type === 'srs' ? 'srsDocument' : type === 'brd' ? 'brdDocument' : type === 'legal' ? 'legalPolicyDocument' : 'proposalDocument';
     setFormData(prev => ({
       ...prev,
-      [mockField]: mockOrganizationalData[mockField as keyof typeof mockOrganizationalData] as string
+      [mockField]: mockOrganizationalData[mockField] as string
     }));
   };
 
@@ -118,20 +125,29 @@ export default function Dashboard() {
   };
 
   const handleStartAnalysis = async () => {
+    if (!formData.srsDocument || !formData.brdDocument || !formData.legalPolicyDocument || !formData.proposalDocument) {
+      setError("Strategic baseline incomplete. Please upload all 4 required pillars.");
+      return;
+    }
+
     setAnalyzing(true);
     setError(null);
     try {
-      // Ensure we pass the document data clearly
       const result = await initiateComprehensiveRiskAnalysis(formData);
       setData(result);
       setShowSetup(false);
     } catch (e: any) {
       console.error("Analysis failure:", e);
-      setError(e.message || "Risk Agent Orchestration failed.");
+      const message = e.message?.includes("Required JSON schema") 
+        ? "Strategic Pillar Validation Failed: One or more documents contained insufficient context for analysis."
+        : e.message || "Risk Agent Orchestration failed.";
+      setError(message);
     } finally {
       setAnalyzing(false);
     }
   };
+
+  const allFilesUploaded = uploadedFiles.srs && uploadedFiles.brd && uploadedFiles.legal && uploadedFiles.proposal;
 
   const domainData = data ? [
     { id: 'financial', name: "Financial", score: data.domainAnalysis.financial.overallRiskScore, fill: "hsl(var(--chart-1))", icon: TrendingUp },
@@ -161,7 +177,7 @@ export default function Dashboard() {
             ))}
           </div>
           <p className="text-muted-foreground text-sm leading-relaxed">
-            Correlating SRS requirements against Legal frameworks and Business Proposals for {formData.companyName}...
+            Correlating document pillars to identify cross-domain contradictions for {formData.companyName}...
           </p>
         </div>
       </div>
@@ -195,7 +211,7 @@ export default function Dashboard() {
           </Badge>
           <h1 className="text-6xl font-extrabold tracking-tighter text-white font-headline">Strategic Ingestion</h1>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto leading-relaxed">
-            Upload the four pillars of organizational intelligence to initialize multi-agent vector correlation.
+            Upload your organizational pillars to initialize multi-agent vector correlation.
           </p>
         </div>
 
@@ -208,7 +224,7 @@ export default function Dashboard() {
                   <UploadCloud className="w-5 h-5 text-primary" />
                   Context Document Gateway
                 </CardTitle>
-                <CardDescription>System identifies risks by spotting contradictions between these pillars.</CardDescription>
+                <CardDescription>All 4 pillars are required for deep correlation analysis.</CardDescription>
               </div>
               <Button onClick={handleLoadSample} variant="outline" size="sm" className="text-[10px] font-bold border-primary/20 hover:bg-primary/10 h-9 px-4">
                 LOAD SAMPLE ENTERPRISE DATA
@@ -274,7 +290,7 @@ export default function Dashboard() {
             <div className="pt-4">
               <Button 
                 onClick={handleStartAnalysis} 
-                disabled={analyzing || !uploadedFiles.srs || !uploadedFiles.brd}
+                disabled={analyzing || !allFilesUploaded}
                 className="w-full h-16 bg-primary hover:bg-primary/90 text-black font-black text-xl gap-3 shadow-[0_10px_40px_rgba(212,175,55,0.2)] rounded-2xl group transition-all hover:-translate-y-1"
               >
                 <Activity className="w-7 h-7 group-hover:scale-110 transition-transform" />
@@ -283,7 +299,7 @@ export default function Dashboard() {
               </Button>
               <div className="flex items-center justify-center gap-2 mt-6 text-[10px] text-muted-foreground uppercase tracking-[0.3em] font-black">
                 <ShieldAlert className="w-4 h-4 text-primary" />
-                Minimum requirement: SRS + BRD baseline
+                Required Pillars: {Object.values(uploadedFiles).filter(Boolean).length}/4 Verified
               </div>
             </div>
           </CardContent>
