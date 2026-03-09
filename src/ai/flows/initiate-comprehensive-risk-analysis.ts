@@ -1,9 +1,8 @@
 'use server';
 /**
  * @fileOverview This file implements the Genkit flow for initiating a comprehensive organizational risk analysis.
- * It uses a single high-fidelity prompt to simulate a multi-agent orchestration (Financial, Cybersecurity, 
- * Operational, Compliance, Strategic/Market) to identify anomalies, predict probabilities, and propose 
- * mitigation strategies across all risk domains in one reliable operation.
+ * It uses a single high-fidelity prompt to simulate a multi-agent orchestration to identify anomalies, 
+ * predict probabilities, and propose mitigation strategies across all risk domains.
  */
 
 import {ai} from '@/ai/genkit';
@@ -29,11 +28,11 @@ const AgentOutputSchema = z.object({
 
 const OrganizationalDataInputSchema = z.object({
   companyName: z.string().describe('The name of the organization.'),
-  financialData: z.record(z.string(), z.any()).describe('Financial data in JSON format.'),
-  cybersecurityReports: z.record(z.string(), z.any()).describe('Cybersecurity reports in JSON format.'),
-  operationalMetrics: z.record(z.string(), z.any()).describe('Operational metrics in JSON format.'),
-  complianceDocuments: z.record(z.string(), z.any()).describe('Compliance documents in JSON format.'),
-  strategicMarketReports: z.record(z.string(), z.any()).describe('Strategic and market reports in JSON format.'),
+  financialData: z.record(z.string(), z.any()).describe('Financial data.'),
+  cybersecurityReports: z.record(z.string(), z.any()).describe('Cybersecurity reports.'),
+  operationalMetrics: z.record(z.string(), z.any()).describe('Operational metrics.'),
+  complianceDocuments: z.record(z.string(), z.any()).describe('Compliance documents.'),
+  strategicMarketReports: z.record(z.string(), z.any()).describe('Strategic and market reports.'),
 });
 
 export type InitiateComprehensiveRiskAnalysisInput = z.infer<typeof OrganizationalDataInputSchema>;
@@ -59,7 +58,15 @@ export type InitiateComprehensiveRiskAnalysisOutput = z.infer<typeof Comprehensi
 
 const comprehensiveRiskAnalysisPrompt = ai.definePrompt({
   name: 'comprehensiveRiskAnalysisPrompt',
-  input: { schema: OrganizationalDataInputSchema },
+  input: { 
+    schema: OrganizationalDataInputSchema.extend({
+      financialStr: z.string(),
+      cyberStr: z.string(),
+      opsStr: z.string(),
+      compStr: z.string(),
+      stratStr: z.string(),
+    })
+  },
   output: { schema: ComprehensiveRiskAnalysisOutputSchema },
   prompt: `You are the IntelliRisk AI Orchestrator. Your task is to perform a deep-vector risk analysis for "{{companyName}}" by simulating five specialized risk agents:
 
@@ -70,11 +77,11 @@ const comprehensiveRiskAnalysisPrompt = ai.definePrompt({
 5. Strategic Agent: Monitors market share and competitor moves.
 
 Organizational Data provided:
-- Financial: {{{json financialData}}}
-- Cyber: {{{json cybersecurityReports}}}
-- Operational: {{{json operationalMetrics}}}
-- Compliance: {{{json complianceDocuments}}}
-- Strategic: {{{json strategicMarketReports}}}
+- Financial: {{{financialStr}}}
+- Cyber: {{{cyberStr}}}
+- Operational: {{{opsStr}}}
+- Compliance: {{{compStr}}}
+- Strategic: {{{stratStr}}}
 
 Please provide a structured, holistic risk profile. For each domain, identify specific risks (at least 2-3), detect anomalies, and calculate a domain-specific risk score. Finally, aggregate these into an overall organizational risk index and global mitigation strategy.`,
 });
@@ -86,13 +93,15 @@ const initiateComprehensiveRiskAnalysisFlow = ai.defineFlow(
     outputSchema: ComprehensiveRiskAnalysisOutputSchema,
   },
   async (input) => {
-    // Check for API keys
-    if (!process.env.GOOGLE_GENAI_API_KEY && !process.env.GEMINI_API_KEY) {
-      throw new Error('API Key is missing. Please add GOOGLE_GENAI_API_KEY to your environment.');
-    }
-
     try {
-      const { output } = await comprehensiveRiskAnalysisPrompt(input);
+      const { output } = await comprehensiveRiskAnalysisPrompt({
+        ...input,
+        financialStr: JSON.stringify(input.financialData),
+        cyberStr: JSON.stringify(input.cybersecurityReports),
+        opsStr: JSON.stringify(input.operationalMetrics),
+        compStr: JSON.stringify(input.complianceDocuments),
+        stratStr: JSON.stringify(input.strategicMarketReports),
+      });
       if (!output) throw new Error('Analysis failed to generate a response.');
       return output;
     } catch (error: any) {
