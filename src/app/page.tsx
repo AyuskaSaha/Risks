@@ -91,7 +91,7 @@ export default function Dashboard() {
   });
 
   const [formData, setFormData] = React.useState<InitiateComprehensiveRiskAnalysisInput>({
-    companyName: "Acme Corp",
+    companyName: "Global Horizon Logistics",
     srsDocument: "",
     brdDocument: "",
     legalPolicyDocument: "",
@@ -99,13 +99,11 @@ export default function Dashboard() {
   });
 
   const handleFileUpload = (type: keyof typeof uploadedFiles) => {
-    // In a real app, we'd use a PDF parser here. 
-    // For the prototype, we simulate the success and populate the state with mock text.
     setUploadedFiles(prev => ({ ...prev, [type]: true }));
+    const mockField = type === 'srs' ? 'srsDocument' : type === 'brd' ? 'brdDocument' : type === 'legal' ? 'legalPolicyDocument' : 'proposalDocument';
     setFormData(prev => ({
       ...prev,
-      [type === 'srs' ? 'srsDocument' : type === 'brd' ? 'brdDocument' : type === 'legal' ? 'legalPolicyDocument' : 'proposalDocument']: 
-      mockOrganizationalData[type === 'srs' ? 'srsDocument' : type === 'brd' ? 'brdDocument' : type === 'legal' ? 'legalPolicyDocument' : 'proposalDocument' as keyof typeof mockOrganizationalData] as string
+      [mockField]: mockOrganizationalData[mockField as keyof typeof mockOrganizationalData] as string
     }));
   };
 
@@ -123,11 +121,13 @@ export default function Dashboard() {
     setAnalyzing(true);
     setError(null);
     try {
+      // Ensure we pass the document data clearly
       const result = await initiateComprehensiveRiskAnalysis(formData);
       setData(result);
       setShowSetup(false);
     } catch (e: any) {
-      setError(e.message || "Analysis Interrupted");
+      console.error("Analysis failure:", e);
+      setError(e.message || "Risk Agent Orchestration failed.");
     } finally {
       setAnalyzing(false);
     }
@@ -141,57 +141,104 @@ export default function Dashboard() {
     { id: 'strategicMarket', name: "Strategic", score: data.domainAnalysis.strategicMarket.overallRiskScore, fill: "hsl(var(--chart-5))", icon: Globe },
   ] : [];
 
+  if (analyzing) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[80vh] space-y-8 animate-in fade-in duration-700">
+        <div className="relative">
+          <div className="w-40 h-40 rounded-full border-2 border-primary/10 border-t-primary animate-spin" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Cpu className="w-12 h-12 text-primary animate-pulse" />
+          </div>
+        </div>
+        <div className="text-center space-y-4 max-w-lg">
+          <h2 className="text-3xl font-bold text-white font-headline tracking-tight">Synchronizing Agents</h2>
+          <div className="flex items-center justify-center gap-4">
+            {['Financial', 'Cyber', 'Operational', 'Compliance', 'Strategic'].map((a, i) => (
+              <div key={a} className="flex flex-col items-center gap-2" style={{ animationDelay: `${i * 150}ms` }}>
+                <div className="w-2 h-2 rounded-full bg-primary animate-bounce" />
+                <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-tighter">{a}</span>
+              </div>
+            ))}
+          </div>
+          <p className="text-muted-foreground text-sm leading-relaxed">
+            Correlating SRS requirements against Legal frameworks and Business Proposals for {formData.companyName}...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[80vh] space-y-6 text-center animate-in zoom-in-95 duration-500">
+        <div className="w-24 h-24 rounded-full bg-destructive/10 flex items-center justify-center border border-destructive/20 shadow-[0_0_30px_rgba(239,68,68,0.1)]">
+          <AlertCircle className="w-12 h-12 text-destructive" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-3xl font-bold text-white">System Error</h2>
+          <p className="text-muted-foreground max-w-lg text-lg">{error}</p>
+        </div>
+        <Button onClick={() => { setError(null); setShowSetup(true); }} className="gap-2 h-12 px-8 bg-white/10 hover:bg-white/20 border-white/10 text-white rounded-xl">
+          <ListRestart className="w-5 h-5" />
+          Recalibrate & Retry
+        </Button>
+      </div>
+    );
+  }
+
   if (showSetup) {
     return (
-      <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-700 pb-20">
+      <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-top-4 duration-1000 pb-20">
         <div className="text-center space-y-4">
           <Badge variant="outline" className="border-primary/40 text-primary px-4 py-1 rounded-full text-[10px] tracking-widest uppercase font-bold">
-            Secure Intelligence Node
+            IntelliRisk Alpha Core
           </Badge>
-          <h1 className="text-5xl font-extrabold tracking-tight text-white font-headline">Intelligence Setup</h1>
-          <p className="text-muted-foreground text-lg">Upload core organizational PDFs to initialize multi-agent risk orchestration.</p>
+          <h1 className="text-6xl font-extrabold tracking-tighter text-white font-headline">Strategic Ingestion</h1>
+          <p className="text-muted-foreground text-lg max-w-2xl mx-auto leading-relaxed">
+            Upload the four pillars of organizational intelligence to initialize multi-agent vector correlation.
+          </p>
         </div>
 
         <Card className="bg-card/50 border-primary/20 shadow-2xl overflow-hidden backdrop-blur-md">
           <div className="h-1.5 w-full bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
+          <CardHeader className="pb-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
                 <CardTitle className="text-xl flex items-center gap-2 text-white">
                   <UploadCloud className="w-5 h-5 text-primary" />
-                  Strategic Document Ingestion
+                  Context Document Gateway
                 </CardTitle>
-                <CardDescription>System accepts PDF, DOCX, and TXT formats for vector analysis.</CardDescription>
+                <CardDescription>System identifies risks by spotting contradictions between these pillars.</CardDescription>
               </div>
-              <Button onClick={handleLoadSample} variant="outline" size="sm" className="text-[10px] font-bold border-primary/20 hover:bg-primary/10 h-8">
-                LOAD SAMPLE STRATEGY PACK
+              <Button onClick={handleLoadSample} variant="outline" size="sm" className="text-[10px] font-bold border-primary/20 hover:bg-primary/10 h-9 px-4">
+                LOAD SAMPLE ENTERPRISE DATA
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="space-y-8 pt-6">
+          <CardContent className="space-y-8 pt-0">
             <div className="grid grid-cols-1 gap-6">
               <div className="space-y-2">
-                <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Target Organization</Label>
+                <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest pl-1">Target Organization</Label>
                 <Input 
                   value={formData.companyName} 
                   onChange={e => setFormData({...formData, companyName: e.target.value})}
                   placeholder="e.g., Global Horizon Logistics"
-                  className="bg-white/5 border-white/10 text-white h-12 text-lg focus:border-primary/50 transition-all"
+                  className="bg-white/5 border-white/10 text-white h-14 text-xl focus:border-primary/50 transition-all rounded-xl"
                 />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {[
-                  { id: 'srs', label: 'Software Requirements (SRS)', icon: FileText, color: 'text-blue-400' },
-                  { id: 'brd', label: 'Business Requirements (BRD)', icon: FileText, color: 'text-purple-400' },
+                  { id: 'srs', label: 'SRS (Software Specs)', icon: FileText, color: 'text-blue-400' },
+                  { id: 'brd', label: 'BRD (Business Goals)', icon: FileText, color: 'text-purple-400' },
                   { id: 'legal', label: 'Legal & Policy Framework', icon: Scale, color: 'text-green-400' },
-                  { id: 'proposal', label: 'Strategic Roadmap Proposal', icon: Globe, color: 'text-orange-400' },
+                  { id: 'proposal', label: 'Strategic Proposal', icon: Globe, color: 'text-orange-400' },
                 ].map((doc) => (
                   <div key={doc.id} className="relative group">
                     <div className={cn(
-                      "flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed transition-all h-[160px] cursor-pointer",
+                      "flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed transition-all h-[180px] cursor-pointer",
                       uploadedFiles[doc.id as keyof typeof uploadedFiles] 
-                        ? "bg-primary/5 border-primary/40" 
+                        ? "bg-primary/5 border-primary/40 shadow-[inset_0_0_20px_rgba(212,175,55,0.05)]" 
                         : "bg-white/5 border-white/5 hover:border-white/20 hover:bg-white/10"
                     )}
                     onClick={() => document.getElementById(`file-${doc.id}`)?.click()}
@@ -204,16 +251,18 @@ export default function Dashboard() {
                         onChange={() => handleFileUpload(doc.id as any)}
                       />
                       {uploadedFiles[doc.id as keyof typeof uploadedFiles] ? (
-                        <div className="flex flex-col items-center gap-2 animate-in zoom-in-95 duration-300">
-                          <CheckCircle2 className="w-10 h-10 text-primary" />
-                          <span className="text-xs font-bold text-white uppercase tracking-tighter">{doc.id.toUpperCase()} Processed</span>
-                          <span className="text-[10px] text-muted-foreground">Document vector extracted</span>
+                        <div className="flex flex-col items-center gap-2 animate-in zoom-in-95 duration-500">
+                          <CheckCircle2 className="w-12 h-12 text-primary" />
+                          <span className="text-xs font-black text-white uppercase tracking-tighter">{doc.id.toUpperCase()} UPLOADED</span>
+                          <span className="text-[10px] text-muted-foreground">Vector extraction successful</span>
                         </div>
                       ) : (
-                        <div className="flex flex-col items-center gap-3">
-                          <doc.icon className={cn("w-10 h-10 opacity-40 group-hover:opacity-100 transition-opacity", doc.color)} />
-                          <span className="text-sm font-medium text-muted-foreground text-center">{doc.label}</span>
-                          <Badge variant="secondary" className="text-[9px] bg-white/10">SELECT PDF</Badge>
+                        <div className="flex flex-col items-center gap-4">
+                          <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center">
+                            <doc.icon className={cn("w-6 h-6 opacity-40 group-hover:opacity-100 transition-opacity", doc.color)} />
+                          </div>
+                          <span className="text-sm font-semibold text-muted-foreground text-center">{doc.label}</span>
+                          <Badge variant="secondary" className="text-[9px] bg-white/10 font-bold px-3">BROWSE PDF</Badge>
                         </div>
                       )}
                     </div>
@@ -226,24 +275,15 @@ export default function Dashboard() {
               <Button 
                 onClick={handleStartAnalysis} 
                 disabled={analyzing || !uploadedFiles.srs || !uploadedFiles.brd}
-                className="w-full h-14 bg-primary hover:bg-primary/90 text-black font-bold text-xl gap-3 shadow-[0_0_30px_rgba(212,175,55,0.2)] rounded-xl group"
+                className="w-full h-16 bg-primary hover:bg-primary/90 text-black font-black text-xl gap-3 shadow-[0_10px_40px_rgba(212,175,55,0.2)] rounded-2xl group transition-all hover:-translate-y-1"
               >
-                {analyzing ? (
-                  <>
-                    <Loader2 className="w-6 h-6 animate-spin" />
-                    Correlating Global Vectors...
-                  </>
-                ) : (
-                  <>
-                    <Activity className="w-6 h-6 group-hover:scale-110 transition-transform" />
-                    Initialize Multi-Agent Orchestration
-                    <ChevronRight className="w-6 h-6" />
-                  </>
-                )}
+                <Activity className="w-7 h-7 group-hover:scale-110 transition-transform" />
+                INITIALIZE MULTI-AGENT ORCHESTRATION
+                <ChevronRight className="w-7 h-7" />
               </Button>
-              <div className="flex items-center justify-center gap-2 mt-4 text-[10px] text-muted-foreground uppercase tracking-[0.2em] font-bold">
-                <ShieldAlert className="w-3 h-3" />
-                System requires SRS and BRD minimum for baseline correlation
+              <div className="flex items-center justify-center gap-2 mt-6 text-[10px] text-muted-foreground uppercase tracking-[0.3em] font-black">
+                <ShieldAlert className="w-4 h-4 text-primary" />
+                Minimum requirement: SRS + BRD baseline
               </div>
             </div>
           </CardContent>
@@ -252,94 +292,51 @@ export default function Dashboard() {
     );
   }
 
-  if (analyzing) {
-    return (
-      <div className="flex flex-col items-center justify-center h-[80vh] space-y-8 animate-in fade-in duration-1000">
-        <div className="relative">
-          <div className="w-32 h-32 rounded-full border-2 border-primary/20 border-t-primary animate-spin" />
-          <Cpu className="w-10 h-10 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse" />
-        </div>
-        <div className="text-center space-y-4">
-          <h2 className="text-3xl font-bold text-white font-headline tracking-tight">Orchestrating AI Agents</h2>
-          <div className="flex items-center justify-center gap-4">
-            {['Financial', 'Cyber', 'Ops', 'Legal', 'Market'].map((a, i) => (
-              <div key={a} className="flex flex-col items-center gap-2" style={{ animationDelay: `${i * 150}ms` }}>
-                <div className="w-2 h-2 rounded-full bg-primary animate-bounce" />
-                <span className="text-[10px] text-muted-foreground font-bold uppercase">{a}</span>
-              </div>
-            ))}
-          </div>
-          <p className="text-muted-foreground max-w-sm mx-auto text-sm leading-relaxed">
-            Correlating document inconsistencies across {formData.companyName}'s strategic framework...
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center h-[80vh] space-y-6 text-center">
-        <div className="w-24 h-24 rounded-full bg-destructive/10 flex items-center justify-center border border-destructive/20 shadow-[0_0_30px_rgba(239,68,68,0.1)]">
-          <AlertCircle className="w-12 h-12 text-destructive" />
-        </div>
-        <div className="space-y-2">
-          <h2 className="text-3xl font-bold text-white">Intelligence Failure</h2>
-          <p className="text-muted-foreground max-w-lg text-lg">{error}</p>
-        </div>
-        <Button onClick={() => setShowSetup(true)} className="gap-2 h-12 px-8 bg-white/10 hover:bg-white/20 border-white/10 text-white rounded-xl">
-          <ListRestart className="w-5 h-5" />
-          Re-Upload Strategic Pack
-        </Button>
-      </div>
-    );
-  }
-
   if (!data) return null;
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-1000 pb-20">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <Badge className="bg-primary/20 text-primary border-primary/20 text-[10px] font-bold">LIVE ANALYSIS</Badge>
-            <span className="text-xs text-muted-foreground uppercase tracking-widest font-bold">Node: Alpha-7</span>
+          <div className="flex items-center gap-3">
+            <Badge className="bg-primary/20 text-primary border-primary/20 text-[10px] font-black tracking-widest">LIVE ORCHESTRATION</Badge>
+            <span className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] font-bold">Node: INTELLIRISK-ALPHA-7</span>
           </div>
-          <h1 className="text-4xl font-extrabold tracking-tight text-white font-headline">Intelligence Command</h1>
-          <p className="text-muted-foreground">Strategic posture review for {formData.companyName}.</p>
+          <h1 className="text-5xl font-black tracking-tight text-white font-headline">Threat Command</h1>
+          <p className="text-muted-foreground text-lg">Synthesized risk profile for <span className="text-white font-bold">{formData.companyName}</span>.</p>
         </div>
-        <div className="flex gap-2">
-          <Button onClick={() => setShowSetup(true)} variant="outline" size="sm" className="gap-2 bg-white/5 hover:bg-white/10 border-white/10 text-white h-10 px-4 rounded-lg">
-            <ListRestart className="w-4 h-4" />
-            Recalibrate Input Documents
+        <div className="flex gap-3">
+          <Button onClick={() => setShowSetup(true)} variant="outline" size="lg" className="gap-2 bg-white/5 hover:bg-white/10 border-white/10 text-white h-12 px-6 rounded-xl font-bold">
+            <ListRestart className="w-5 h-5" />
+            Recalibrate Strategic Pillars
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="md:col-span-1 bg-card/50 backdrop-blur-sm border-primary/20 shadow-[0_0_30px_rgba(212,175,55,0.05)] rounded-2xl overflow-hidden">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Card className="lg:col-span-1 bg-card/50 backdrop-blur-xl border-primary/20 shadow-[0_0_50px_rgba(212,175,55,0.08)] rounded-3xl overflow-hidden">
           <CardHeader>
-            <CardTitle className="text-lg">Aggregate Risk Index</CardTitle>
-            <CardDescription>Synthesized Organizational Posture</CardDescription>
+            <CardTitle className="text-xl font-bold">Aggregate Risk Index</CardTitle>
+            <CardDescription>Synthesized Global Organizational Posture</CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-col items-center justify-center pt-2">
+          <CardContent className="flex flex-col items-center justify-center py-8">
             <RiskGauge score={data.overallRiskIndex} level={data.overallRiskLevel} />
           </CardContent>
         </Card>
 
-        <Card className="md:col-span-2 bg-card/30 backdrop-blur-sm border-white/5 rounded-2xl">
+        <Card className="lg:col-span-2 bg-card/30 backdrop-blur-md border-white/5 rounded-3xl shadow-2xl">
           <CardHeader>
-            <CardTitle className="text-lg">Domain Risk Heatmap</CardTitle>
-            <CardDescription>Multi-Agent Threat Distribution Across Pillars</CardDescription>
+            <CardTitle className="text-xl font-bold">Domain Risk Heatmap</CardTitle>
+            <CardDescription>Threat Density Across Organizational Pillars</CardDescription>
           </CardHeader>
-          <CardContent className="h-[240px]">
+          <CardContent className="h-[280px]">
             <ChartContainer config={chartConfig} className="h-full w-full">
               <BarChart data={domainData}>
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12, fontWeight: 700}} />
                 <YAxis hide domain={[0, 100]} />
-                <Bar dataKey="score" radius={[6, 6, 0, 0]}>
+                <Bar dataKey="score" radius={[8, 8, 0, 0]} barSize={50}>
                   {domainData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.fill} fillOpacity={0.8} />
+                    <Cell key={`cell-${index}`} fill={entry.fill} fillOpacity={0.9} />
                   ))}
                 </Bar>
                 <ChartTooltip content={<ChartTooltipContent hideLabel />} />
@@ -349,38 +346,46 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <Cpu className="w-5 h-5 text-primary" />
-            Specialized Agent Cognitive Logs
+      <div className="space-y-6">
+        <div className="flex items-center justify-between px-2">
+          <h2 className="text-2xl font-black text-white flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Cpu className="w-5 h-5 text-primary" />
+            </div>
+            Active Agent Cognitive Stream
           </h2>
-          <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">5 Active Units In-Sync</span>
+          <span className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] font-black bg-white/5 px-4 py-1.5 rounded-full border border-white/5">5 Units Synchronized</span>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           {domainData.map((domain) => {
             const analysis = data.domainAnalysis[domain.id as keyof typeof data.domainAnalysis];
             
             return (
-              <Card key={domain.name} className="bg-card/40 border-white/5 hover:border-primary/40 transition-all group overflow-hidden rounded-xl">
-                <div className="h-1 w-full" style={{ backgroundColor: domain.fill }} />
-                <CardHeader className="p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <domain.icon className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
-                    <Badge variant="outline" className="text-[10px] bg-white/5 border-white/10 text-white">{analysis.overallRiskScore}%</Badge>
+              <Card key={domain.name} className="bg-card/40 border-white/5 hover:border-primary/40 transition-all group overflow-hidden rounded-2xl cursor-pointer">
+                <div className="h-1.5 w-full transition-all group-hover:h-3" style={{ backgroundColor: domain.fill }} />
+                <CardHeader className="p-5 pb-3">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+                      <domain.icon className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                    </div>
+                    <Badge variant="outline" className="text-xs font-black bg-white/5 border-white/10 text-white px-2 py-0.5">
+                      {analysis.overallRiskScore}%
+                    </Badge>
                   </div>
-                  <CardTitle className="text-sm font-bold text-white">{domain.name} Agent</CardTitle>
+                  <CardTitle className="text-base font-bold text-white group-hover:text-primary transition-colors">{domain.name} Unit</CardTitle>
                 </CardHeader>
-                <CardContent className="p-4 pt-0">
-                  <p className="text-[11px] leading-relaxed text-muted-foreground line-clamp-3 italic mb-4 h-[45px]">
+                <CardContent className="p-5 pt-0">
+                  <p className="text-[11px] leading-relaxed text-muted-foreground line-clamp-4 italic mb-6 h-[60px] group-hover:text-foreground transition-colors">
                     "{analysis.summary}"
                   </p>
-                  <div className="flex flex-col gap-2 border-t border-white/5 pt-4">
-                    <Link href={`/agents/${domain.id}`} className="inline-flex items-center gap-1 text-[10px] text-primary font-bold hover:underline">
-                      COGNITIVE REVIEW <Cpu className="w-3 h-3" />
+                  <div className="flex flex-col gap-3 border-t border-white/5 pt-5">
+                    <Link href={`/agents/${domain.id}`} className="inline-flex items-center justify-between w-full group/link">
+                      <span className="text-[10px] text-primary font-black uppercase tracking-wider">Cognitive Logs</span>
+                      <Cpu className="w-3.5 h-3.5 text-primary group-hover/link:translate-x-1 transition-transform" />
                     </Link>
-                    <Link href={`/risk/${domain.id}`} className="inline-flex items-center gap-1 text-[10px] text-muted-foreground font-bold hover:text-white transition-colors">
-                      FULL THREAT REPORT <ArrowRight className="w-3 h-3" />
+                    <Link href={`/risk/${domain.id}`} className="inline-flex items-center justify-between w-full group/link">
+                      <span className="text-[10px] text-muted-foreground font-black uppercase tracking-wider group-hover:text-white transition-colors">Threat Report</span>
+                      <ArrowRight className="w-3.5 h-3.5 text-muted-foreground group-hover/link:translate-x-1 transition-transform" />
                     </Link>
                   </div>
                 </CardContent>
@@ -391,36 +396,42 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="bg-card/30 border-white/5 rounded-2xl">
+        <Card className="bg-card/30 border-white/5 rounded-3xl shadow-xl overflow-hidden relative group">
+          <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+            <AlertTriangle className="w-24 h-24 text-primary" />
+          </div>
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <CardTitle className="text-lg text-white">Cross-Document Anomalies</CardTitle>
-              <CardDescription>Discrepancies identified between SRS, BRD, and Legal</CardDescription>
+              <CardTitle className="text-xl font-bold text-white">Document Correlation Anomalies</CardTitle>
+              <CardDescription>Discrepancies identified between your 4 strategic pillars</CardDescription>
             </div>
-            <Activity className="w-5 h-5 text-primary" />
+            <Activity className="w-6 h-6 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-sm leading-relaxed text-muted-foreground bg-white/5 p-4 rounded-xl border border-white/10 relative overflow-hidden group">
-              <div className="absolute top-0 left-0 w-1 h-full bg-primary shadow-[0_0_15px_rgba(212,175,55,0.5)]" />
-              {data.anomaliesSummary}
+            <div className="text-sm leading-relaxed text-muted-foreground bg-white/5 p-6 rounded-2xl border border-white/10 relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-1.5 h-full bg-primary shadow-[0_0_20px_rgba(212,175,55,0.6)]" />
+              <p className="font-medium">{data.anomaliesSummary}</p>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-card/30 border-white/5 rounded-2xl">
+        <Card className="bg-card/30 border-white/5 rounded-3xl shadow-xl overflow-hidden relative group">
+          <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+            <ShieldCheck className="w-24 h-24 text-primary" />
+          </div>
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <CardTitle className="text-lg text-white">Global Mitigation Plan</CardTitle>
-              <CardDescription>Consolidated Strategic Roadmap for Leadership</CardDescription>
+              <CardTitle className="text-xl font-bold text-white">Global Mitigation Roadmap</CardTitle>
+              <CardDescription>Consolidated Multi-Agent Strategy for Leadership</CardDescription>
             </div>
-            <ShieldCheck className="w-5 h-5 text-primary" />
+            <ShieldCheck className="w-6 h-6 text-primary" />
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               {data.globalMitigationStrategies.map((strategy, idx) => (
-                <div key={idx} className="flex items-start gap-3 p-3 rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
-                  <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary shrink-0 border border-primary/20">{idx + 1}</div>
-                  <span className="text-xs text-muted-foreground leading-snug">{strategy}</span>
+                <div key={idx} className="flex items-start gap-4 p-4 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all hover:translate-x-1">
+                  <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center text-[11px] font-black text-primary shrink-0 border border-primary/20">{idx + 1}</div>
+                  <span className="text-xs text-muted-foreground leading-relaxed font-medium">{strategy}</span>
                 </div>
               ))}
             </div>
