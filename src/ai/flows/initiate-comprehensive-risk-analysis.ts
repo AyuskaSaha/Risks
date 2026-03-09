@@ -1,8 +1,7 @@
 'use server';
 /**
  * @fileOverview This file implements the Genkit flow for initiating a comprehensive organizational risk analysis.
- * It uses a single high-fidelity prompt to simulate a multi-agent orchestration to identify anomalies, 
- * predict probabilities, and propose mitigation strategies across all risk domains.
+ * It uses a single high-fidelity prompt to simulate a multi-agent orchestration.
  */
 
 import {ai} from '@/ai/genkit';
@@ -94,6 +93,9 @@ const initiateComprehensiveRiskAnalysisFlow = ai.defineFlow(
   },
   async (input) => {
     try {
+      // Small delay to help with potential rapid refresh rate limiting
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       const { output } = await comprehensiveRiskAnalysisPrompt({
         ...input,
         financialStr: JSON.stringify(input.financialData),
@@ -106,6 +108,9 @@ const initiateComprehensiveRiskAnalysisFlow = ai.defineFlow(
       return output;
     } catch (error: any) {
       console.error("Genkit Flow Error:", error);
+      if (error.message?.includes('429') || error.message?.includes('RESOURCE_EXHAUSTED')) {
+        throw new Error("Rate limit exceeded. Please wait a few seconds before retrying the analysis.");
+      }
       throw new Error(`Risk Agent Orchestration failed: ${error.message || 'Unknown error'}`);
     }
   }
