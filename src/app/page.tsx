@@ -77,18 +77,6 @@ export default function Dashboard() {
   const [data, setData] = React.useState<InitiateComprehensiveRiskAnalysisOutput | null>(null);
   const [showSetup, setShowSetup] = React.useState(true);
 
-  const [uploadedFiles, setUploadedFiles] = React.useState<{
-    srs: boolean;
-    brd: boolean;
-    legal: boolean;
-    proposal: boolean;
-  }>({
-    srs: false,
-    brd: false,
-    legal: false,
-    proposal: false,
-  });
-
   const [formData, setFormData] = React.useState<InitiateComprehensiveRiskAnalysisInput>({
     companyName: "Global Horizon Logistics",
     srsDocument: "",
@@ -97,7 +85,7 @@ export default function Dashboard() {
     proposalDocument: "",
   });
 
-  const handleFileUpload = (type: keyof typeof uploadedFiles) => {
+  const handleFileUpload = (type: 'srs' | 'brd' | 'legal' | 'proposal') => {
     const fieldMapping = {
       srs: 'srsDocument',
       brd: 'brdDocument',
@@ -105,27 +93,39 @@ export default function Dashboard() {
       proposal: 'proposalDocument'
     } as const;
 
-    const mockField = fieldMapping[type];
+    const fieldName = fieldMapping[type];
+    const mockContent = mockOrganizationalData[fieldName] as string;
     
-    setUploadedFiles(prev => ({ ...prev, [type]: true }));
     setFormData(prev => ({
       ...prev,
-      [mockField]: mockOrganizationalData[mockField] as string
+      [fieldName]: mockContent
     }));
   };
 
   const handleLoadSample = () => {
     setFormData(mockOrganizationalData);
-    setUploadedFiles({
-      srs: true,
-      brd: true,
-      legal: true,
-      proposal: true,
-    });
   };
 
+  const isUploaded = (type: 'srs' | 'brd' | 'legal' | 'proposal') => {
+    const fieldMapping = {
+      srs: 'srsDocument',
+      brd: 'brdDocument',
+      legal: 'legalPolicyDocument',
+      proposal: 'proposalDocument'
+    } as const;
+    return !!formData[fieldMapping[type]];
+  };
+
+  const allFilesUploaded = !!(
+    formData.srsDocument && 
+    formData.brdDocument && 
+    formData.legalPolicyDocument && 
+    formData.proposalDocument &&
+    formData.companyName
+  );
+
   const handleStartAnalysis = async () => {
-    if (!formData.srsDocument || !formData.brdDocument || !formData.legalPolicyDocument || !formData.proposalDocument) {
+    if (!allFilesUploaded) {
       setError("Strategic baseline incomplete. Please upload all 4 required pillars.");
       return;
     }
@@ -146,8 +146,6 @@ export default function Dashboard() {
       setAnalyzing(false);
     }
   };
-
-  const allFilesUploaded = uploadedFiles.srs && uploadedFiles.brd && uploadedFiles.legal && uploadedFiles.proposal;
 
   const domainData = data ? [
     { id: 'financial', name: "Financial", score: data.domainAnalysis.financial.overallRiskScore, fill: "hsl(var(--chart-1))", icon: TrendingUp },
@@ -249,41 +247,44 @@ export default function Dashboard() {
                   { id: 'brd', label: 'BRD (Business Goals)', icon: FileText, color: 'text-purple-400' },
                   { id: 'legal', label: 'Legal & Policy Framework', icon: Scale, color: 'text-green-400' },
                   { id: 'proposal', label: 'Strategic Proposal', icon: Globe, color: 'text-orange-400' },
-                ].map((doc) => (
-                  <div key={doc.id} className="relative group">
-                    <div className={cn(
-                      "flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed transition-all h-[180px] cursor-pointer",
-                      uploadedFiles[doc.id as keyof typeof uploadedFiles] 
-                        ? "bg-primary/5 border-primary/40 shadow-[inset_0_0_20px_rgba(212,175,55,0.05)]" 
-                        : "bg-white/5 border-white/5 hover:border-white/20 hover:bg-white/10"
-                    )}
-                    onClick={() => document.getElementById(`file-${doc.id}`)?.click()}
-                    >
-                      <input 
-                        type="file" 
-                        id={`file-${doc.id}`} 
-                        className="hidden" 
-                        accept=".pdf,.doc,.docx,.txt"
-                        onChange={() => handleFileUpload(doc.id as any)}
-                      />
-                      {uploadedFiles[doc.id as keyof typeof uploadedFiles] ? (
-                        <div className="flex flex-col items-center gap-2 animate-in zoom-in-95 duration-500">
-                          <CheckCircle2 className="w-12 h-12 text-primary" />
-                          <span className="text-xs font-black text-white uppercase tracking-tighter">{doc.id.toUpperCase()} UPLOADED</span>
-                          <span className="text-[10px] text-muted-foreground">Vector extraction successful</span>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col items-center gap-4">
-                          <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center">
-                            <doc.icon className={cn("w-6 h-6 opacity-40 group-hover:opacity-100 transition-opacity", doc.color)} />
-                          </div>
-                          <span className="text-sm font-semibold text-muted-foreground text-center">{doc.label}</span>
-                          <Badge variant="secondary" className="text-[9px] bg-white/10 font-bold px-3">BROWSE PDF</Badge>
-                        </div>
+                ].map((doc) => {
+                  const uploaded = isUploaded(doc.id as any);
+                  return (
+                    <div key={doc.id} className="relative group">
+                      <div className={cn(
+                        "flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed transition-all h-[180px] cursor-pointer",
+                        uploaded 
+                          ? "bg-primary/5 border-primary/40 shadow-[inset_0_0_20px_rgba(212,175,55,0.05)]" 
+                          : "bg-white/5 border-white/5 hover:border-white/20 hover:bg-white/10"
                       )}
+                      onClick={() => document.getElementById(`file-${doc.id}`)?.click()}
+                      >
+                        <input 
+                          type="file" 
+                          id={`file-${doc.id}`} 
+                          className="hidden" 
+                          accept=".pdf,.doc,.docx,.txt"
+                          onChange={() => handleFileUpload(doc.id as any)}
+                        />
+                        {uploaded ? (
+                          <div className="flex flex-col items-center gap-2 animate-in zoom-in-95 duration-500">
+                            <CheckCircle2 className="w-12 h-12 text-primary" />
+                            <span className="text-xs font-black text-white uppercase tracking-tighter">{doc.id.toUpperCase()} UPLOADED</span>
+                            <span className="text-[10px] text-muted-foreground">Vector extraction successful</span>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col items-center gap-4">
+                            <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center">
+                              <doc.icon className={cn("w-6 h-6 opacity-40 group-hover:opacity-100 transition-opacity", doc.color)} />
+                            </div>
+                            <span className="text-sm font-semibold text-muted-foreground text-center">{doc.label}</span>
+                            <Badge variant="secondary" className="text-[9px] bg-white/10 font-bold px-3">BROWSE PDF</Badge>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
@@ -299,7 +300,12 @@ export default function Dashboard() {
               </Button>
               <div className="flex items-center justify-center gap-2 mt-6 text-[10px] text-muted-foreground uppercase tracking-[0.3em] font-black">
                 <ShieldAlert className="w-4 h-4 text-primary" />
-                Required Pillars: {Object.values(uploadedFiles).filter(Boolean).length}/4 Verified
+                Strategic Documents: {Object.values({
+                  srs: formData.srsDocument,
+                  brd: formData.brdDocument,
+                  legal: formData.legalPolicyDocument,
+                  proposal: formData.proposalDocument
+                }).filter(Boolean).length}/4 Verified
               </div>
             </div>
           </CardContent>
