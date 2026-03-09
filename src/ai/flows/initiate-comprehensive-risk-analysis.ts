@@ -50,6 +50,15 @@ const ComprehensiveRiskAnalysisOutputSchema = z.object({
     compliance: AgentOutputSchema,
     strategicMarket: AgentOutputSchema,
   }),
+  // Visualization Data
+  heatmapData: z.array(z.object({ impact: z.number(), probability: z.number(), count: z.number(), label: z.string() })),
+  trendData: z.array(z.object({ month: z.string(), current: z.number(), forecast: z.number() })),
+  severityDistribution: z.array(z.object({ category: z.string(), Low: z.number(), Medium: z.number(), High: z.number(), Critical: z.number() })),
+  mitigationProgress: z.array(z.object({ name: z.string(), progress: z.number() })),
+  deptComparison: z.array(z.object({ subject: z.string(), A: z.number(), B: z.number(), fullMark: z.number() })),
+  incidentFrequency: z.array(z.object({ day: z.string(), count: z.number() })),
+  gapAnalysis: z.object({ current: z.number(), desired: z.number(), gap: z.number() }),
+  riskTimeline: z.array(z.object({ time: z.string(), event: z.string(), type: z.string() })),
 });
 
 export type InitiateComprehensiveRiskAnalysisOutput = z.infer<typeof ComprehensiveRiskAnalysisOutputSchema>;
@@ -69,27 +78,27 @@ const comprehensiveRiskAnalysisPrompt = ai.definePrompt({
   prompt: `You are the IntelliRisk AI Orchestrator. Perform a deep-vector risk analysis for "{{companyName}}".
 
 Primary Analysis Documents:
-- SRS (System Requirements): {{{srsDocument}}}
-- BRD (Business Goals): {{{brdDocument}}}
-- Legal/Policy (Governance): {{{legalPolicyDocument}}}
-- Proposal (Strategic Roadmap): {{{proposalDocument}}}
+- SRS: {{{srsDocument}}}
+- BRD: {{{brdDocument}}}
+- Legal/Policy: {{{legalPolicyDocument}}}
+- Proposal: {{{proposalDocument}}}
 
 Operational Context (if available):
 - Financial: {{{financialStr}}}
 - Cyber: {{{cyberStr}}}
 - Operational: {{{opsStr}}}
 
-Your mission is to find inconsistencies, risks, and anomalies between these documents. 
-For example: Does the Proposal promise something the SRS can't support? Does the BRD ignore a Legal constraint?
+Your mission is to find inconsistencies, risks, and anomalies.
+Generate comprehensive visualization data including:
+1. heatmapData: 25 points representing a 5x5 matrix of risk distribution.
+2. trendData: Historical (last 6 months) and forecast (next 3 months) risk levels.
+3. severityDistribution: Risks per domain split by severity level.
+4. mitigationProgress: Completion percentage for key mitigation plans.
+5. deptComparison: Radar data comparing risk across departments (Finance, Tech, Ops, Compliance, Sales).
+6. gapAnalysis: Numerical gap between current risk posture and strategic goals.
+7. riskTimeline: Recent detections and projected future review cycles.
 
-Simulate five specialized agents:
-1. Financial: Risk vs budget/projections.
-2. Cyber: Technical vulnerabilities vs security requirements.
-3. Operational: Delivery feasibility vs resource metrics.
-4. Compliance: Operations vs Governance/Legal frameworks.
-5. Strategic: Alignment with BRD and Proposal goals.
-
-Identify 2-3 specific risks per domain. Calculate scores. Summarize anomalies. Provide global strategies.`,
+Identify specific risks per domain. Calculate scores. Summarize anomalies. Provide global strategies.`,
 });
 
 const initiateComprehensiveRiskAnalysisFlow = ai.defineFlow(

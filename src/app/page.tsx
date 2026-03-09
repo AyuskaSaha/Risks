@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -22,7 +21,14 @@ import {
   FileText,
   Zap,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  BarChart3,
+  PieChart,
+  LineChart as LineChartIcon,
+  Network,
+  Calendar,
+  Layers,
+  Target
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -36,7 +42,24 @@ import {
   BarChart, 
   XAxis, 
   YAxis, 
-  Cell
+  Cell,
+  Line,
+  LineChart,
+  Area,
+  AreaChart,
+  Pie,
+  PieChart as RechartsPieChart,
+  Radar,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Scatter,
+  ScatterChart,
+  ZAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid
 } from "recharts";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
@@ -44,31 +67,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { mockOrganizationalData } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
+import { Progress } from "@/components/ui/progress";
 
 const chartConfig = {
-  score: {
-    label: "Risk Score",
-  },
-  financial: {
-    label: "Financial",
-    color: "hsl(var(--chart-1))",
-  },
-  cybersecurity: {
-    label: "Cyber",
-    color: "hsl(var(--chart-2))",
-  },
-  operational: {
-    label: "Operational",
-    color: "hsl(var(--chart-3))",
-  },
-  compliance: {
-    label: "Compliance",
-    color: "hsl(var(--chart-4))",
-  },
-  strategicMarket: {
-    label: "Strategic",
-    color: "hsl(var(--chart-5))",
-  },
+  score: { label: "Risk Score" },
+  current: { label: "Current Risk", color: "hsl(var(--primary))" },
+  forecast: { label: "AI Forecast", color: "hsl(var(--chart-2))" },
+  financial: { label: "Financial", color: "hsl(var(--chart-1))" },
+  cybersecurity: { label: "Cyber", color: "hsl(var(--chart-2))" },
+  operational: { label: "Operational", color: "hsl(var(--chart-3))" },
+  compliance: { label: "Compliance", color: "hsl(var(--chart-4))" },
+  strategicMarket: { label: "Strategic", color: "hsl(var(--chart-5))" },
 } satisfies ChartConfig;
 
 export default function Dashboard() {
@@ -92,14 +101,9 @@ export default function Dashboard() {
       legal: 'legalPolicyDocument',
       proposal: 'proposalDocument'
     } as const;
-
     const fieldName = fieldMapping[type];
     const mockContent = mockOrganizationalData[fieldName] as string;
-    
-    setFormData(prev => ({
-      ...prev,
-      [fieldName]: mockContent
-    }));
+    setFormData(prev => ({ ...prev, [fieldName]: mockContent }));
   };
 
   const handleLoadSample = () => {
@@ -129,7 +133,6 @@ export default function Dashboard() {
       setError("Strategic baseline incomplete. Please upload all 4 required pillars.");
       return;
     }
-
     setAnalyzing(true);
     setError(null);
     try {
@@ -137,23 +140,11 @@ export default function Dashboard() {
       setData(result);
       setShowSetup(false);
     } catch (e: any) {
-      console.error("Analysis failure:", e);
-      const message = e.message?.includes("Required JSON schema") 
-        ? "Strategic Pillar Validation Failed: One or more documents contained insufficient context for analysis."
-        : e.message || "Risk Agent Orchestration failed.";
-      setError(message);
+      setError(e.message || "Risk Agent Orchestration failed.");
     } finally {
       setAnalyzing(false);
     }
   };
-
-  const domainData = data ? [
-    { id: 'financial', name: "Financial", score: data.domainAnalysis.financial.overallRiskScore, fill: "hsl(var(--chart-1))", icon: TrendingUp },
-    { id: 'cybersecurity', name: "Cyber", score: data.domainAnalysis.cybersecurity.overallRiskScore, fill: "hsl(var(--chart-2))", icon: ShieldCheck },
-    { id: 'operational', name: "Operational", score: data.domainAnalysis.operational.overallRiskScore, fill: "hsl(var(--chart-3))", icon: Zap },
-    { id: 'compliance', name: "Compliance", score: data.domainAnalysis.compliance.overallRiskScore, fill: "hsl(var(--chart-4))", icon: Scale },
-    { id: 'strategicMarket', name: "Strategic", score: data.domainAnalysis.strategicMarket.overallRiskScore, fill: "hsl(var(--chart-5))", icon: Globe },
-  ] : [];
 
   if (analyzing) {
     return (
@@ -174,28 +165,8 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
-          <p className="text-muted-foreground text-sm leading-relaxed">
-            Correlating document pillars to identify cross-domain contradictions for {formData.companyName}...
-          </p>
+          <p className="text-muted-foreground text-sm">Correlating strategic pillars for {formData.companyName}...</p>
         </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center h-[80vh] space-y-6 text-center animate-in zoom-in-95 duration-500">
-        <div className="w-24 h-24 rounded-full bg-destructive/10 flex items-center justify-center border border-destructive/20 shadow-[0_0_30px_rgba(239,68,68,0.1)]">
-          <AlertCircle className="w-12 h-12 text-destructive" />
-        </div>
-        <div className="space-y-2">
-          <h2 className="text-3xl font-bold text-white">System Error</h2>
-          <p className="text-muted-foreground max-w-lg text-lg">{error}</p>
-        </div>
-        <Button onClick={() => { setError(null); setShowSetup(true); }} className="gap-2 h-12 px-8 bg-white/10 hover:bg-white/20 border-white/10 text-white rounded-xl">
-          <ListRestart className="w-5 h-5" />
-          Recalibrate & Retry
-        </Button>
       </div>
     );
   }
@@ -236,78 +207,29 @@ export default function Dashboard() {
                 <Input 
                   value={formData.companyName} 
                   onChange={e => setFormData({...formData, companyName: e.target.value})}
-                  placeholder="e.g., Global Horizon Logistics"
                   className="bg-white/5 border-white/10 text-white h-14 text-xl focus:border-primary/50 transition-all rounded-xl"
                 />
               </div>
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {[
-                  { id: 'srs', label: 'SRS (Software Specs)', icon: FileText, color: 'text-blue-400' },
-                  { id: 'brd', label: 'BRD (Business Goals)', icon: FileText, color: 'text-purple-400' },
-                  { id: 'legal', label: 'Legal & Policy Framework', icon: Scale, color: 'text-green-400' },
-                  { id: 'proposal', label: 'Strategic Proposal', icon: Globe, color: 'text-orange-400' },
-                ].map((doc) => {
-                  const uploaded = isUploaded(doc.id as any);
-                  return (
-                    <div key={doc.id} className="relative group">
-                      <div className={cn(
-                        "flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed transition-all h-[180px] cursor-pointer",
-                        uploaded 
-                          ? "bg-primary/5 border-primary/40 shadow-[inset_0_0_20px_rgba(212,175,55,0.05)]" 
-                          : "bg-white/5 border-white/5 hover:border-white/20 hover:bg-white/10"
-                      )}
-                      onClick={() => document.getElementById(`file-${doc.id}`)?.click()}
-                      >
-                        <input 
-                          type="file" 
-                          id={`file-${doc.id}`} 
-                          className="hidden" 
-                          accept=".pdf,.doc,.docx,.txt"
-                          onChange={() => handleFileUpload(doc.id as any)}
-                        />
-                        {uploaded ? (
-                          <div className="flex flex-col items-center gap-2 animate-in zoom-in-95 duration-500">
-                            <CheckCircle2 className="w-12 h-12 text-primary" />
-                            <span className="text-xs font-black text-white uppercase tracking-tighter">{doc.id.toUpperCase()} UPLOADED</span>
-                            <span className="text-[10px] text-muted-foreground">Vector extraction successful</span>
-                          </div>
-                        ) : (
-                          <div className="flex flex-col items-center gap-4">
-                            <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center">
-                              <doc.icon className={cn("w-6 h-6 opacity-40 group-hover:opacity-100 transition-opacity", doc.color)} />
-                            </div>
-                            <span className="text-sm font-semibold text-muted-foreground text-center">{doc.label}</span>
-                            <Badge variant="secondary" className="text-[9px] bg-white/10 font-bold px-3">BROWSE PDF</Badge>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
+                {['srs', 'brd', 'legal', 'proposal'].map((id) => (
+                  <div key={id} onClick={() => handleFileUpload(id as any)} className={cn(
+                    "flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed transition-all h-[140px] cursor-pointer",
+                    isUploaded(id as any) ? "bg-primary/5 border-primary/40" : "bg-white/5 border-white/5 hover:border-white/20"
+                  )}>
+                    {isUploaded(id as any) ? (
+                      <CheckCircle2 className="w-8 h-8 text-primary" />
+                    ) : (
+                      <FileText className="w-8 h-8 opacity-40" />
+                    )}
+                    <span className="text-xs mt-2 uppercase font-bold tracking-tighter">{id}</span>
+                  </div>
+                ))}
               </div>
             </div>
-
-            <div className="pt-4">
-              <Button 
-                onClick={handleStartAnalysis} 
-                disabled={analyzing || !allFilesUploaded}
-                className="w-full h-16 bg-primary hover:bg-primary/90 text-black font-black text-xl gap-3 shadow-[0_10px_40px_rgba(212,175,55,0.2)] rounded-2xl group transition-all hover:-translate-y-1"
-              >
-                <Activity className="w-7 h-7 group-hover:scale-110 transition-transform" />
-                INITIALIZE MULTI-AGENT ORCHESTRATION
-                <ChevronRight className="w-7 h-7" />
-              </Button>
-              <div className="flex items-center justify-center gap-2 mt-6 text-[10px] text-muted-foreground uppercase tracking-[0.3em] font-black">
-                <ShieldAlert className="w-4 h-4 text-primary" />
-                Strategic Documents: {Object.values({
-                  srs: formData.srsDocument,
-                  brd: formData.brdDocument,
-                  legal: formData.legalPolicyDocument,
-                  proposal: formData.proposalDocument
-                }).filter(Boolean).length}/4 Verified
-              </div>
-            </div>
+            <Button onClick={handleStartAnalysis} disabled={!allFilesUploaded} className="w-full h-16 bg-primary hover:bg-primary/90 text-black font-black text-xl gap-3 rounded-2xl">
+              INITIALIZE MULTI-AGENT ORCHESTRATION
+              <ChevronRight className="w-7 h-7" />
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -317,148 +239,246 @@ export default function Dashboard() {
   if (!data) return null;
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-1000 pb-20">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-1000 pb-20 max-w-[1600px] mx-auto">
+      {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-1">
-          <div className="flex items-center gap-3">
-            <Badge className="bg-primary/20 text-primary border-primary/20 text-[10px] font-black tracking-widest">LIVE ORCHESTRATION</Badge>
-            <span className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] font-bold">Node: INTELLIRISK-ALPHA-7</span>
-          </div>
+          <Badge className="bg-primary/20 text-primary border-primary/20 text-[10px] font-black tracking-widest">LIVE ORCHESTRATION</Badge>
           <h1 className="text-5xl font-black tracking-tight text-white font-headline">Threat Command</h1>
-          <p className="text-muted-foreground text-lg">Synthesized risk profile for <span className="text-white font-bold">{formData.companyName}</span>.</p>
+          <p className="text-muted-foreground">Strategic Risk Engine for <span className="text-white font-bold">{formData.companyName}</span></p>
         </div>
-        <div className="flex gap-3">
-          <Button onClick={() => setShowSetup(true)} variant="outline" size="lg" className="gap-2 bg-white/5 hover:bg-white/10 border-white/10 text-white h-12 px-6 rounded-xl font-bold">
-            <ListRestart className="w-5 h-5" />
-            Recalibrate Strategic Pillars
-          </Button>
-        </div>
+        <Button onClick={() => setShowSetup(true)} variant="outline" className="gap-2 bg-white/5 hover:bg-white/10 border-white/10 text-white h-12 rounded-xl">
+          <ListRestart className="w-5 h-5" />
+          Recalibrate
+        </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-1 bg-card/50 backdrop-blur-xl border-primary/20 shadow-[0_0_50px_rgba(212,175,55,0.08)] rounded-3xl overflow-hidden">
-          <CardHeader>
-            <CardTitle className="text-xl font-bold">Aggregate Risk Index</CardTitle>
-            <CardDescription>Synthesized Global Organizational Posture</CardDescription>
+      {/* Grid Layout for Visuals */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-6">
+        
+        {/* 1. Overall Risk Index */}
+        <Card className="lg:col-span-1 xl:col-span-2 bg-card/50 border-primary/20 flex flex-col items-center justify-center py-6">
+          <CardHeader className="w-full text-center">
+            <CardTitle className="text-lg">Aggregate Risk Index</CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col items-center justify-center py-8">
-            <RiskGauge score={data.overallRiskIndex} level={data.overallRiskLevel} />
+          <RiskGauge score={data.overallRiskIndex} level={data.overallRiskLevel} />
+        </Card>
+
+        {/* 2. Risk Matrix (5x5) */}
+        <Card className="lg:col-span-1 xl:col-span-2 bg-card/50 border-white/5">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2"><Layers className="w-5 h-5 text-primary" /> Risk Matrix</CardTitle>
+          </CardHeader>
+          <CardContent className="h-[220px]">
+             <ChartContainer config={chartConfig} className="h-full w-full">
+                <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                  <XAxis type="number" dataKey="probability" name="Probability" domain={[0, 5]} hide />
+                  <YAxis type="number" dataKey="impact" name="Impact" domain={[0, 5]} hide />
+                  <ZAxis type="number" dataKey="count" range={[100, 500]} />
+                  <Tooltip cursor={{ strokeDasharray: '3 3' }} content={<ChartTooltipContent />} />
+                  <Scatter data={data.heatmapData} fill="hsl(var(--primary))">
+                    {data.heatmapData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.impact > 3 ? "hsl(var(--destructive))" : "hsl(var(--primary))"} />
+                    ))}
+                  </Scatter>
+                </ScatterChart>
+             </ChartContainer>
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-2 bg-card/30 backdrop-blur-md border-white/5 rounded-3xl shadow-2xl">
+        {/* 3. Dept Risk Comparison (Radar) */}
+        <Card className="lg:col-span-1 xl:col-span-2 bg-card/50 border-white/5">
           <CardHeader>
-            <CardTitle className="text-xl font-bold">Domain Risk Heatmap</CardTitle>
-            <CardDescription>Threat Density Across Organizational Pillars</CardDescription>
+            <CardTitle className="text-lg flex items-center gap-2"><Target className="w-5 h-5 text-primary" /> Cross-Dept Comparison</CardTitle>
           </CardHeader>
-          <CardContent className="h-[280px]">
+          <CardContent className="h-[220px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <RadarChart data={data.deptComparison}>
+                <PolarGrid stroke="rgba(255,255,255,0.1)" />
+                <PolarAngleAxis dataKey="subject" tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 10 }} />
+                <Radar name="Risk Level" dataKey="A" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.6} />
+              </RadarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* 4. Trend Analysis & Forecast */}
+        <Card className="md:col-span-2 lg:col-span-4 bg-card/50 border-white/5">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2"><LineChartIcon className="w-5 h-5 text-primary" /> Risk Trend Forecast</CardTitle>
+          </CardHeader>
+          <CardContent className="h-[250px]">
             <ChartContainer config={chartConfig} className="h-full w-full">
-              <BarChart data={domainData}>
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12, fontWeight: 700}} />
+              <LineChart data={data.trendData}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                <XAxis dataKey="month" axisLine={false} tickLine={false} />
                 <YAxis hide domain={[0, 100]} />
-                <Bar dataKey="score" radius={[8, 8, 0, 0]} barSize={50}>
-                  {domainData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.fill} fillOpacity={0.9} />
-                  ))}
-                </Bar>
-                <ChartTooltip content={<ChartTooltipContent hideLabel />} />
+                <Line type="monotone" dataKey="current" stroke="hsl(var(--primary))" strokeWidth={3} dot={{ fill: "hsl(var(--primary))" }} />
+                <Line type="monotone" dataKey="forecast" stroke="hsl(var(--chart-2))" strokeDasharray="5 5" strokeWidth={2} dot={false} />
+                <ChartTooltip content={<ChartTooltipContent />} />
+              </LineChart>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+
+        {/* 5. Severity Distribution */}
+        <Card className="md:col-span-2 lg:col-span-2 bg-card/50 border-white/5">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2"><BarChart3 className="w-5 h-5 text-primary" /> Severity Distribution</CardTitle>
+          </CardHeader>
+          <CardContent className="h-[250px]">
+            <ChartContainer config={chartConfig} className="h-full w-full">
+              <BarChart data={data.severityDistribution} layout="vertical">
+                <XAxis type="number" hide />
+                <YAxis dataKey="category" type="category" axisLine={false} tickLine={false} tick={{ fill: "white", fontSize: 10 }} width={80} />
+                <Bar dataKey="Critical" stackId="a" fill="hsl(var(--destructive))" radius={[0, 0, 0, 0]} />
+                <Bar dataKey="High" stackId="a" fill="hsl(var(--chart-4))" />
+                <Bar dataKey="Medium" stackId="a" fill="hsl(var(--chart-1))" />
+                <Bar dataKey="Low" stackId="a" fill="hsl(var(--chart-3))" radius={[0, 4, 4, 0]} />
+                <ChartTooltip content={<ChartTooltipContent />} />
               </BarChart>
             </ChartContainer>
           </CardContent>
         </Card>
-      </div>
 
-      <div className="space-y-6">
-        <div className="flex items-center justify-between px-2">
-          <h2 className="text-2xl font-black text-white flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Cpu className="w-5 h-5 text-primary" />
-            </div>
-            Active Agent Cognitive Stream
-          </h2>
-          <span className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] font-black bg-white/5 px-4 py-1.5 rounded-full border border-white/5">5 Units Synchronized</span>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          {domainData.map((domain) => {
-            const analysis = data.domainAnalysis[domain.id as keyof typeof data.domainAnalysis];
-            
-            return (
-              <Card key={domain.name} className="bg-card/40 border-white/5 hover:border-primary/40 transition-all group overflow-hidden rounded-2xl cursor-pointer">
-                <div className="h-1.5 w-full transition-all group-hover:h-3" style={{ backgroundColor: domain.fill }} />
-                <CardHeader className="p-5 pb-3">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
-                      <domain.icon className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
-                    </div>
-                    <Badge variant="outline" className="text-xs font-black bg-white/5 border-white/10 text-white px-2 py-0.5">
-                      {analysis.overallRiskScore}%
-                    </Badge>
-                  </div>
-                  <CardTitle className="text-base font-bold text-white group-hover:text-primary transition-colors">{domain.name} Unit</CardTitle>
-                </CardHeader>
-                <CardContent className="p-5 pt-0">
-                  <p className="text-[11px] leading-relaxed text-muted-foreground line-clamp-4 italic mb-6 h-[60px] group-hover:text-foreground transition-colors">
-                    "{analysis.summary}"
-                  </p>
-                  <div className="flex flex-col gap-3 border-t border-white/5 pt-5">
-                    <Link href={`/agents/${domain.id}`} className="inline-flex items-center justify-between w-full group/link">
-                      <span className="text-[10px] text-primary font-black uppercase tracking-wider">Cognitive Logs</span>
-                      <Cpu className="w-3.5 h-3.5 text-primary group-hover/link:translate-x-1 transition-transform" />
-                    </Link>
-                    <Link href={`/risk/${domain.id}`} className="inline-flex items-center justify-between w-full group/link">
-                      <span className="text-[10px] text-muted-foreground font-black uppercase tracking-wider group-hover:text-white transition-colors">Threat Report</span>
-                      <ArrowRight className="w-3.5 h-3.5 text-muted-foreground group-hover/link:translate-x-1 transition-transform" />
-                    </Link>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="bg-card/30 border-white/5 rounded-3xl shadow-xl overflow-hidden relative group">
-          <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
-            <AlertTriangle className="w-24 h-24 text-primary" />
-          </div>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle className="text-xl font-bold text-white">Document Correlation Anomalies</CardTitle>
-              <CardDescription>Discrepancies identified between your 4 strategic pillars</CardDescription>
-            </div>
-            <Activity className="w-6 h-6 text-primary" />
+        {/* 6. Mitigation Progress Tracker */}
+        <Card className="md:col-span-2 lg:col-span-3 bg-card/50 border-white/5">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2"><ShieldCheck className="w-5 h-5 text-primary" /> Mitigation Progress Tracker</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-sm leading-relaxed text-muted-foreground bg-white/5 p-6 rounded-2xl border border-white/10 relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-1.5 h-full bg-primary shadow-[0_0_20px_rgba(212,175,55,0.6)]" />
-              <p className="font-medium">{data.anomaliesSummary}</p>
-            </div>
+          <CardContent className="space-y-6">
+            {data.mitigationProgress.map((p, i) => (
+              <div key={i} className="space-y-2">
+                <div className="flex justify-between text-xs">
+                  <span className="font-bold text-white">{p.name}</span>
+                  <span className="text-primary">{p.progress}%</span>
+                </div>
+                <Progress value={p.progress} className="h-1.5" />
+              </div>
+            ))}
           </CardContent>
         </Card>
 
-        <Card className="bg-card/30 border-white/5 rounded-3xl shadow-xl overflow-hidden relative group">
-          <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
-            <ShieldCheck className="w-24 h-24 text-primary" />
-          </div>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle className="text-xl font-bold text-white">Global Mitigation Roadmap</CardTitle>
-              <CardDescription>Consolidated Multi-Agent Strategy for Leadership</CardDescription>
+        {/* 7. Gap Analysis & 8. Category Breakdown */}
+        <Card className="md:col-span-2 lg:col-span-3 bg-card/50 border-white/5 flex flex-col md:flex-row p-6 gap-6">
+          <div className="flex-1 space-y-4">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2"><Activity className="w-4 h-4" /> Gap Analysis</h3>
+            <div className="relative pt-10 flex flex-col items-center">
+              <div className="w-0 h-0 border-l-[60px] border-l-transparent border-r-[60px] border-r-transparent border-b-[100px] border-b-primary opacity-20 absolute" />
+              <div className="relative z-10 text-center">
+                <div className="text-4xl font-black text-white">{data.gapAnalysis.gap}%</div>
+                <div className="text-[10px] text-primary uppercase font-bold">Strategic Gap</div>
+              </div>
+              <div className="grid grid-cols-2 gap-8 w-full mt-12 text-center text-[10px] uppercase font-bold">
+                <div><div className="text-muted-foreground">Current</div><div className="text-white text-lg">{data.gapAnalysis.current}%</div></div>
+                <div><div className="text-muted-foreground">Desired</div><div className="text-white text-lg">{data.gapAnalysis.desired}%</div></div>
+              </div>
             </div>
-            <ShieldCheck className="w-6 h-6 text-primary" />
+          </div>
+          <div className="w-px bg-white/5 hidden md:block" />
+          <div className="flex-1 space-y-4">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2"><PieChart className="w-4 h-4" /> Risk Weighting</h3>
+            <div className="h-[180px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <RechartsPieChart>
+                  <Pie data={Object.entries(data.domainAnalysis).map(([k, v]) => ({ name: k, value: v.overallRiskScore }))} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
+                    {[0,1,2,3,4].map((i) => <Cell key={i} fill={`hsl(var(--chart-${i+1}))`} />)}
+                  </Pie>
+                  <Tooltip />
+                </RechartsPieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </Card>
+
+        {/* 9. Risk Timeline */}
+        <Card className="md:col-span-2 lg:col-span-6 bg-card/50 border-white/5">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2"><Calendar className="w-5 h-5 text-primary" /> Risk Intelligence Timeline</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {data.globalMitigationStrategies.map((strategy, idx) => (
-                <div key={idx} className="flex items-start gap-4 p-4 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all hover:translate-x-1">
-                  <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center text-[11px] font-black text-primary shrink-0 border border-primary/20">{idx + 1}</div>
-                  <span className="text-xs text-muted-foreground leading-relaxed font-medium">{strategy}</span>
+            <div className="flex justify-between items-center overflow-x-auto gap-8 pb-4">
+              {data.riskTimeline.map((item, i) => (
+                <div key={i} className="flex flex-col items-center min-w-[120px] relative">
+                  <div className="w-3 h-3 rounded-full bg-primary mb-2 shadow-[0_0_10px_rgba(212,175,55,1)]" />
+                  <div className="text-[10px] text-muted-foreground mb-1">{item.time}</div>
+                  <div className="text-[11px] font-bold text-white text-center">{item.event}</div>
+                  <Badge variant="outline" className="text-[8px] mt-2 opacity-50">{item.type}</Badge>
                 </div>
               ))}
             </div>
           </CardContent>
         </Card>
+
+        {/* 10. Dependency Network (Visual representation) */}
+        <Card className="md:col-span-2 lg:col-span-3 bg-card/50 border-white/5">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2"><Network className="w-5 h-5 text-primary" /> Risk Dependency Network</CardTitle>
+          </CardHeader>
+          <CardContent className="h-[200px] flex items-center justify-center relative">
+            <div className="absolute inset-0 opacity-10 flex items-center justify-center">
+              <Network className="w-48 h-48" />
+            </div>
+            <div className="grid grid-cols-3 gap-4 relative z-10">
+              {['Cyber', 'Financial', 'Ops', 'Legal', 'Strategic'].map((d, i) => (
+                <div key={d} className="p-3 rounded-lg bg-white/5 border border-white/10 text-[10px] font-bold text-center hover:bg-primary/10 hover:border-primary/50 cursor-help transition-all">
+                  {d.toUpperCase()}
+                  <div className="mt-1 h-1 w-full bg-primary/20 rounded-full overflow-hidden"><div className="h-full bg-primary" style={{ width: `${Math.random() * 100}%` }} /></div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 11. Incident Frequency (Area Chart) */}
+        <Card className="md:col-span-2 lg:col-span-3 bg-card/50 border-white/5">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2"><Activity className="w-5 h-5 text-primary" /> Incident Frequency Map</CardTitle>
+          </CardHeader>
+          <CardContent className="h-[200px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={data.incidentFrequency}>
+                <defs>
+                  <linearGradient id="colorFreq" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <Area type="monotone" dataKey="count" stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorFreq)" />
+                <Tooltip content={<ChartTooltipContent />} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+      </div>
+
+      {/* Agents Section */}
+      <div className="space-y-6 pt-8">
+        <h2 className="text-3xl font-black text-white flex items-center gap-3">
+          <Cpu className="w-8 h-8 text-primary" /> Specialized Intelligence Layer
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          {Object.entries(data.domainAnalysis).map(([key, analysis]) => (
+            <Card key={key} className="bg-card/40 border-white/5 hover:border-primary/40 transition-all group rounded-2xl cursor-pointer">
+              <div className="h-1.5 w-full bg-primary transition-all group-hover:h-3" />
+              <CardHeader className="p-5 pb-3">
+                <div className="flex items-center justify-between mb-2">
+                   <Badge variant="outline" className="text-primary border-primary/20">{analysis.overallRiskScore}%</Badge>
+                   <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-all" />
+                </div>
+                <CardTitle className="text-base font-bold text-white capitalize">{key}</CardTitle>
+              </CardHeader>
+              <CardContent className="p-5 pt-0">
+                <p className="text-[11px] leading-relaxed text-muted-foreground italic mb-4 line-clamp-3">"{analysis.summary}"</p>
+                <div className="flex flex-col gap-2 pt-4 border-t border-white/5">
+                  <Link href={`/agents/${key}`} className="text-[9px] text-primary font-black uppercase tracking-wider flex items-center justify-between">Cognitive Logs <ArrowRight className="w-3 h-3" /></Link>
+                  <Link href={`/risk/${key}`} className="text-[9px] text-muted-foreground font-black uppercase tracking-wider flex items-center justify-between">Risk Details <ArrowRight className="w-3 h-3" /></Link>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     </div>
   );
