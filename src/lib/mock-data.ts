@@ -5,6 +5,7 @@ export const mockOrganizationalData: InitiateComprehensiveRiskAnalysisInput = {
   srsDocument: "System shall maintain 99.9% uptime for the automated sorting facility. All financial transactions must be logged in a read-only immutable ledger. Real-time tracking of drone fleet is mandatory.",
   brdDocument: "Increase operational efficiency by 25% by 2026. Expand drone delivery to 5 new urban centers. Reduce debt-to-equity ratio below 0.70.",
   legalPolicyDocument: "Strict adherence to EU AI Act. Data retention limited to 7 years. All vendor pre-payments exceeding $1M require dual-officer sign-off and secondary verification.",
+  proposalDocument: "Project 'Zephyr' aims to automate 100% of urban sortation by late 2025. We propose using a custom unverified neural network for flight path optimization to save costs, potentially bypassing standard FAA simulation protocols to ensure a faster rollout than competitors.",
   financialData: {
     revenue_q3: 125000000,
     debt_to_equity: 0.85,
