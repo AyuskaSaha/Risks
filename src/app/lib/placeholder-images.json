@@ -1,0 +1,11 @@
+
+{
+  "placeholderImages": [
+    {
+      "id": "hero-analytics",
+      "description": "Enterprise analytics dashboard visualization",
+      "imageUrl": "https://picsum.photos/seed/enterprise/1200/600",
+      "imageHint": "enterprise dashboard"
+    }
+  ]
+}
