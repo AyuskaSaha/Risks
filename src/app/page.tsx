@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -19,9 +20,7 @@ import {
   UploadCloud,
   ChevronRight,
   FileText,
-  Zap,
   CheckCircle2,
-  AlertCircle,
   BarChart3,
   PieChart,
   LineChart as LineChartIcon,
@@ -30,7 +29,10 @@ import {
   Layers,
   Target,
   Info,
-  History
+  History,
+  Workflow,
+  Zap,
+  Split
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -60,7 +62,8 @@ import {
   ZAxis,
   Tooltip,
   ResponsiveContainer,
-  CartesianGrid
+  CartesianGrid,
+  LabelList
 } from "recharts";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
@@ -88,6 +91,7 @@ export default function Dashboard() {
   const [data, setData] = React.useState<InitiateComprehensiveRiskAnalysisOutput | null>(null);
   const [showSetup, setShowSetup] = React.useState(true);
   const [retryTimer, setRetryTimer] = React.useState<number | null>(null);
+  const [isSimulated, setIsSimulated] = React.useState(false);
 
   const [formData, setFormData] = React.useState<InitiateComprehensiveRiskAnalysisInput>({
     companyName: "Global Horizon Logistics",
@@ -132,13 +136,25 @@ export default function Dashboard() {
     formData.companyName
   );
 
-  const handleStartAnalysis = async () => {
+  const handleStartAnalysis = async (simulated: boolean = false) => {
     if (!allFilesUploaded) {
       setError("Strategic baseline incomplete. Please upload all 4 required pillars.");
       return;
     }
     setAnalyzing(true);
     setError(null);
+    setIsSimulated(simulated);
+
+    if (simulated) {
+      // Simulate a brief delay then use high-fidelity mock data for the dashboard
+      setTimeout(() => {
+        setData(generateSimulatedData());
+        setShowSetup(false);
+        setAnalyzing(false);
+      }, 2000);
+      return;
+    }
+
     try {
       const result = await initiateComprehensiveRiskAnalysis(formData);
       setData(result);
@@ -146,15 +162,79 @@ export default function Dashboard() {
     } catch (e: any) {
       const isRateLimit = e.message?.includes('429') || e.message?.includes('RESOURCE_EXHAUSTED');
       if (isRateLimit) {
-        setError("Rate limit exceeded. System is cooling down. Please wait 30 seconds.");
+        setError("AI Engine quota reached (Rate Limit). System is cooling down. You can wait or run a simulated analysis based on local intelligence.");
         setRetryTimer(30);
       } else {
         setError(e.message || "Risk Agent Orchestration failed.");
       }
       setShowSetup(true);
     } finally {
-      setAnalyzing(false);
+      if (!simulated) setAnalyzing(false);
     }
+  };
+
+  const generateSimulatedData = (): InitiateComprehensiveRiskAnalysisOutput => {
+    // High-fidelity fallback data that satisfies the 15-visual requirement
+    return {
+      overallRiskIndex: 68,
+      overallRiskLevel: 'High',
+      anomaliesSummary: "SYSTEM ALERT: Simulated analysis indicates cross-vector contradictions between 'Project Zephyr' proposal and FAA safety protocols in Legal pillars. Unusual $1.5M single-signature outflow detected in Finance.",
+      globalMitigationStrategies: ["Enforce dual-officer sign-off", "Standardize drone flight simulations"],
+      domainAnalysis: {
+        financial: { risks: [], summary: "High risk due to liquidity gaps.", overallRiskScore: 72 },
+        cybersecurity: { risks: [], summary: "Critical vulnerabilities in sorting API.", overallRiskScore: 85 },
+        operational: { risks: [], summary: "Uptime targets missing due to legacy equipment.", overallRiskScore: 45 },
+        compliance: { risks: [], summary: "Partial alignment with EU AI Act.", overallRiskScore: 30 },
+        strategicMarket: { risks: [], summary: "Market volatility impacting expansion.", overallRiskScore: 55 },
+      },
+      heatmapData: [
+        { impact: 5, probability: 4, count: 2, label: "Cyber" },
+        { impact: 4, probability: 5, count: 1, label: "Financial" },
+        { impact: 3, probability: 2, count: 5, label: "Operational" },
+        { impact: 1, probability: 1, count: 10, label: "Low" }
+      ],
+      trendData: [
+        { month: "JAN", current: 45, forecast: 42 },
+        { month: "FEB", current: 48, forecast: 45 },
+        { month: "MAR", current: 55, forecast: 50 },
+        { month: "APR", current: 62, forecast: 58 },
+        { month: "MAY", current: 68, forecast: 65 },
+        { month: "JUN", current: 72, forecast: 60 }
+      ],
+      severityDistribution: [
+        { category: "Finance", Critical: 2, High: 4, Medium: 3, Low: 1 },
+        { category: "Cyber", Critical: 5, High: 2, Medium: 8, Low: 4 },
+        { category: "Ops", Critical: 1, High: 3, Medium: 12, Low: 15 },
+        { category: "Legal", Critical: 0, High: 1, Medium: 5, Low: 20 }
+      ],
+      mitigationProgress: [
+        { name: "MFA Enforced", progress: 92 },
+        { name: "dual-Sign Policy", progress: 45 },
+        { name: "System Patching", progress: 78 }
+      ],
+      deptComparison: [
+        { subject: "Finance", A: 85, B: 90, fullMark: 100 },
+        { subject: "Tech", A: 45, B: 85, fullMark: 100 },
+        { subject: "Sales", A: 90, B: 95, fullMark: 100 },
+        { subject: "Legal", A: 60, B: 80, fullMark: 100 },
+        { subject: "Ops", A: 55, B: 75, fullMark: 100 }
+      ],
+      incidentFrequency: [
+        { day: "01/10", count: 2 }, { day: "02/10", count: 5 }, { day: "03/10", count: 1 }, { day: "04/10", count: 8 },
+        { day: "05/10", count: 3 }, { day: "06/10", count: 12 }, { day: "07/10", count: 4 }
+      ],
+      gapAnalysis: { current: 45, desired: 95, gap: 50 },
+      riskTimeline: [
+        { time: "08:00", event: "Financial Audit", type: "Review" },
+        { time: "12:00", event: "Cyber Threat Det.", type: "Critical" },
+        { time: "15:00", event: "Policy Alignment", type: "Legal" }
+      ],
+      riskReduction: [
+        { name: "Auth", before: 80, after: 20 },
+        { name: "Liquidity", before: 60, after: 35 },
+        { name: "Latency", before: 40, after: 15 }
+      ]
+    };
   };
 
   React.useEffect(() => {
@@ -174,7 +254,9 @@ export default function Dashboard() {
           </div>
         </div>
         <div className="text-center space-y-4 max-w-lg">
-          <h2 className="text-3xl font-bold text-white font-headline tracking-tight">Synchronizing Agents</h2>
+          <h2 className="text-3xl font-bold text-white font-headline tracking-tight">
+            {isSimulated ? "Initializing Simulated Core" : "Synchronizing Agents"}
+          </h2>
           <div className="flex items-center justify-center gap-4">
             {['Financial', 'Cyber', 'Operational', 'Compliance', 'Strategic'].map((a, i) => (
               <div key={a} className="flex flex-col items-center gap-2" style={{ animationDelay: `${i * 150}ms` }}>
@@ -183,7 +265,9 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
-          <p className="text-muted-foreground text-sm">Correlating strategic pillars for {formData.companyName}...</p>
+          <p className="text-muted-foreground text-sm">
+            {isSimulated ? "Generating high-fidelity strategic telemetry..." : `Correlating strategic pillars for ${formData.companyName}...`}
+          </p>
         </div>
       </div>
     );
@@ -194,11 +278,11 @@ export default function Dashboard() {
       <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-top-4 duration-1000 pb-20">
         <div className="text-center space-y-4">
           <Badge variant="outline" className="border-primary/40 text-primary px-4 py-1 rounded-full text-[10px] tracking-widest uppercase font-bold">
-            IntelliRisk Alpha Core
+            IntelliRisk Command Center
           </Badge>
-          <h1 className="text-6xl font-extrabold tracking-tighter text-white font-headline">Strategic Ingestion</h1>
+          <h1 className="text-6xl font-extrabold tracking-tighter text-white font-headline">Intelligence Setup</h1>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto leading-relaxed">
-            Upload your organizational pillars to initialize multi-agent vector correlation.
+            Upload organizational pillars to initialize vector correlation.
           </p>
         </div>
 
@@ -206,12 +290,24 @@ export default function Dashboard() {
           <Alert variant="destructive" className="bg-destructive/10 border-destructive/20 text-destructive">
             <AlertTriangle className="h-4 w-4" />
             <AlertTitle>System Alert</AlertTitle>
-            <AlertDescription className="flex items-center justify-between">
-              {error}
-              {retryTimer !== null && retryTimer > 0 && (
-                <Badge variant="outline" className="ml-4 border-destructive text-destructive animate-pulse">
-                  {retryTimer}s
-                </Badge>
+            <AlertDescription className="flex flex-col gap-4 mt-2">
+              <p>{error}</p>
+              {error.includes("Rate limit") && (
+                <div className="flex gap-3">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="border-destructive/30 hover:bg-destructive/20 text-xs font-bold"
+                    onClick={() => handleStartAnalysis(true)}
+                  >
+                    RUN SIMULATED ANALYSIS
+                  </Button>
+                  {retryTimer !== null && retryTimer > 0 && (
+                    <Badge variant="outline" className="border-destructive text-destructive animate-pulse">
+                      Retry in {retryTimer}s
+                    </Badge>
+                  )}
+                </div>
               )}
             </AlertDescription>
           </Alert>
@@ -224,9 +320,9 @@ export default function Dashboard() {
               <div>
                 <CardTitle className="text-xl flex items-center gap-2 text-white">
                   <UploadCloud className="w-5 h-5 text-primary" />
-                  Context Document Gateway
+                  Strategic Ingestion Portal
                 </CardTitle>
-                <CardDescription>All 4 pillars are required for deep correlation analysis.</CardDescription>
+                <CardDescription>Required documents for deep correlation analysis.</CardDescription>
               </div>
               <Button onClick={handleLoadSample} variant="outline" size="sm" className="text-[10px] font-bold border-primary/20 hover:bg-primary/10 h-9 px-4">
                 LOAD SAMPLE ENTERPRISE DATA
@@ -241,6 +337,7 @@ export default function Dashboard() {
                   value={formData.companyName} 
                   onChange={e => setFormData({...formData, companyName: e.target.value})}
                   className="bg-white/5 border-white/10 text-white h-14 text-xl focus:border-primary/50 transition-all rounded-xl"
+                  placeholder="Enter Organization Name..."
                 />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -254,17 +351,17 @@ export default function Dashboard() {
                     ) : (
                       <FileText className="w-8 h-8 opacity-40" />
                     )}
-                    <span className="text-xs mt-2 uppercase font-bold tracking-tighter">{id} Document</span>
+                    <span className="text-xs mt-2 uppercase font-bold tracking-tighter">{id.toUpperCase()} Pillar</span>
                   </div>
                 ))}
               </div>
             </div>
             <Button 
-              onClick={handleStartAnalysis} 
+              onClick={() => handleStartAnalysis(false)} 
               disabled={!allFilesUploaded || (retryTimer !== null && retryTimer > 0)} 
-              className="w-full h-16 bg-primary hover:bg-primary/90 text-black font-black text-xl gap-3 rounded-2xl"
+              className="w-full h-16 bg-primary hover:bg-primary/90 text-black font-black text-xl gap-3 rounded-2xl shadow-[0_0_30px_rgba(212,175,55,0.2)]"
             >
-              {retryTimer !== null && retryTimer > 0 ? `COOLING DOWN (${retryTimer}s)` : 'INITIALIZE MULTI-AGENT ORCHESTRATION'}
+              INITIALIZE MULTI-AGENT ORCHESTRATION
               <ChevronRight className="w-7 h-7" />
             </Button>
           </CardContent>
@@ -280,7 +377,9 @@ export default function Dashboard() {
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-1">
-          <Badge className="bg-primary/20 text-primary border-primary/20 text-[10px] font-black tracking-widest uppercase">Live Orchestration Active</Badge>
+          <Badge className="bg-primary/20 text-primary border-primary/20 text-[10px] font-black tracking-widest uppercase">
+            {isSimulated ? "Simulated Baseline Active" : "Live Orchestration Active"}
+          </Badge>
           <h1 className="text-5xl font-black tracking-tight text-white font-headline">Threat Command</h1>
           <p className="text-muted-foreground">Strategic Risk Engine for <span className="text-white font-bold">{formData.companyName}</span></p>
         </div>
@@ -288,7 +387,7 @@ export default function Dashboard() {
           <Link href="/copilot">
             <Button className="gap-2 bg-primary hover:bg-primary/90 text-black h-12 rounded-xl shadow-lg shadow-primary/20">
               <ShieldAlert className="w-5 h-5" />
-              Open Copilot
+              Risk Copilot
             </Button>
           </Link>
           <Button onClick={() => setShowSetup(true)} variant="outline" className="gap-2 bg-white/5 hover:bg-white/10 border-white/10 text-white h-12 rounded-xl">
@@ -298,22 +397,27 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <Alert className="bg-primary/5 border-primary/20 relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
-        <Info className="h-4 w-4 text-primary" />
-        <AlertTitle className="text-primary font-bold">Orchestrator Intelligence Summary</AlertTitle>
-        <AlertDescription className="text-foreground/80 italic">
-          {data.anomaliesSummary}
-        </AlertDescription>
-      </Alert>
+      <Card className="bg-primary/5 border-primary/20 relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-1.5 h-full bg-primary" />
+        <CardHeader className="flex flex-row items-center gap-4 py-4">
+          <Activity className="w-6 h-6 text-primary" />
+          <div>
+            <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary">Intelligence Summary</CardTitle>
+            <CardDescription className="text-foreground/80 italic text-base leading-relaxed mt-1">
+              {data.anomaliesSummary}
+            </CardDescription>
+          </div>
+        </CardHeader>
+      </Card>
 
-      {/* Grid Layout for Visuals */}
+      {/* Grid Layout for 15 Visuals */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-6">
         
-        {/* 1. Overall Risk Index */}
+        {/* 1. Aggregate Risk Index (Gauge) */}
         <Card className="lg:col-span-1 xl:col-span-2 bg-card/50 border-primary/20 flex flex-col items-center justify-center py-6">
           <CardHeader className="w-full text-center">
             <CardTitle className="text-lg">Aggregate Risk Index</CardTitle>
+            <CardDescription className="text-[10px]">Combined Agent Scoring</CardDescription>
           </CardHeader>
           <RiskGauge score={data.overallRiskIndex} level={data.overallRiskLevel} />
         </Card>
@@ -322,7 +426,7 @@ export default function Dashboard() {
         <Card className="lg:col-span-1 xl:col-span-2 bg-card/50 border-white/5">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2 text-white"><Layers className="w-5 h-5 text-primary" /> Risk Heatmap & Matrix</CardTitle>
-            <CardDescription className="text-[10px]">Impact vs Probability (5x5 Matrix)</CardDescription>
+            <CardDescription className="text-[10px]">Impact vs Probability (5x5 Grid)</CardDescription>
           </CardHeader>
           <CardContent className="h-[220px]">
              <ChartContainer config={chartConfig} className="h-full w-full">
@@ -342,11 +446,11 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* 3. Radar Comparison */}
+        {/* 3. Dept Comparison Radar */}
         <Card className="lg:col-span-1 xl:col-span-2 bg-card/50 border-white/5">
           <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2 text-white"><Target className="w-5 h-5 text-primary" /> Cross-Dept Comparison</CardTitle>
-            <CardDescription className="text-[10px]">Inter-departmental Risk Exposure</CardDescription>
+            <CardTitle className="text-lg flex items-center gap-2 text-white"><Target className="w-5 h-5 text-primary" /> Dept Exposure Radar</CardTitle>
+            <CardDescription className="text-[10px]">Multi-departmental Risk Surface</CardDescription>
           </CardHeader>
           <CardContent className="h-[220px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -354,7 +458,7 @@ export default function Dashboard() {
                 <PolarGrid stroke="rgba(255,255,255,0.1)" />
                 <PolarAngleAxis dataKey="subject" tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 10 }} />
                 <Radar name="Current" dataKey="A" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.6} />
-                <Radar name="Goal" dataKey="B" stroke="hsl(var(--chart-2))" fill="hsl(var(--chart-2))" fillOpacity={0.2} />
+                <Radar name="Benchmark" dataKey="B" stroke="hsl(var(--chart-2))" fill="hsl(var(--chart-2))" fillOpacity={0.2} />
                 <Tooltip contentStyle={{ backgroundColor: '#000', border: 'none' }} />
               </RadarChart>
             </ResponsiveContainer>
@@ -364,8 +468,8 @@ export default function Dashboard() {
         {/* 4. Trend Analysis & AI Forecast */}
         <Card className="md:col-span-2 lg:col-span-4 bg-card/50 border-white/5">
           <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2 text-white"><LineChartIcon className="w-5 h-5 text-primary" /> Trend Analysis & AI Forecast</CardTitle>
-            <CardDescription className="text-[10px]">6 Month History + 3 Month Prediction</CardDescription>
+            <CardTitle className="text-lg flex items-center gap-2 text-white"><LineChartIcon className="w-5 h-5 text-primary" /> Trend Analysis & Forecast</CardTitle>
+            <CardDescription className="text-[10px]">Historical Tracking + 3 Month AI Prediction</CardDescription>
           </CardHeader>
           <CardContent className="h-[250px]">
             <ChartContainer config={chartConfig} className="h-full w-full">
@@ -391,7 +495,7 @@ export default function Dashboard() {
         <Card className="md:col-span-2 lg:col-span-2 bg-card/50 border-white/5">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2 text-white"><BarChart3 className="w-5 h-5 text-primary" /> Severity Distribution</CardTitle>
-            <CardDescription className="text-[10px]">Stacked Severity per Domain</CardDescription>
+            <CardDescription className="text-[10px]">Calculated Stack per Domain</CardDescription>
           </CardHeader>
           <CardContent className="h-[250px]">
             <ChartContainer config={chartConfig} className="h-full w-full">
@@ -408,7 +512,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* 6. Mitigation Progress */}
+        {/* 6. Mitigation Progress Tracker */}
         <Card className="md:col-span-2 lg:col-span-3 bg-card/50 border-white/5">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2 text-white"><ShieldCheck className="w-5 h-5 text-primary" /> Mitigation Progress</CardTitle>
@@ -427,10 +531,10 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* 7. Gap Analysis & Risk Weighting */}
+        {/* 7. Gap Analysis & 8. Risk Category Breakdown (Donut) */}
         <Card className="md:col-span-2 lg:col-span-3 bg-card/50 border-white/5 flex flex-col md:flex-row p-6 gap-6">
           <div className="flex-1 space-y-4">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2"><Activity className="w-4 h-4" /> Gap Analysis</h3>
+            <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2"><Workflow className="w-4 h-4" /> Gap Analysis</h3>
             <div className="relative pt-10 flex flex-col items-center">
               <div className="w-0 h-0 border-l-[60px] border-l-transparent border-r-[60px] border-r-transparent border-b-[100px] border-b-primary opacity-20 absolute" />
               <div className="relative z-10 text-center">
@@ -439,13 +543,13 @@ export default function Dashboard() {
               </div>
               <div className="grid grid-cols-2 gap-8 w-full mt-12 text-center text-[10px] uppercase font-bold">
                 <div><div className="text-muted-foreground">Current</div><div className="text-white text-lg">{data.gapAnalysis.current}%</div></div>
-                <div><div className="text-muted-foreground">Goal</div><div className="text-white text-lg">{data.gapAnalysis.desired}%</div></div>
+                <div><div className="text-muted-foreground">Target</div><div className="text-white text-lg">{data.gapAnalysis.desired}%</div></div>
               </div>
             </div>
           </div>
           <div className="w-px bg-white/5 hidden md:block" />
           <div className="flex-1 space-y-4">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2"><PieChart className="w-4 h-4" /> Risk Weighting</h3>
+            <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2"><PieChart className="w-4 h-4" /> Category Breakdown</h3>
             <div className="h-[180px]">
               <ResponsiveContainer width="100%" height="100%">
                 <RechartsPieChart>
@@ -459,7 +563,7 @@ export default function Dashboard() {
           </div>
         </Card>
 
-        {/* 8. Risk Intelligence Timeline */}
+        {/* 9. Intelligence Timeline */}
         <Card className="md:col-span-2 lg:col-span-6 bg-card/50 border-white/5">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2 text-white"><Calendar className="w-5 h-5 text-primary" /> Intelligence Timeline</CardTitle>
@@ -481,31 +585,48 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* 9. Dependency Network */}
+        {/* 10. Incident Frequency Area Graph */}
+        <Card className="md:col-span-2 lg:col-span-3 bg-card/50 border-white/5">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2 text-white"><Activity className="w-5 h-5 text-primary" /> Incident Frequency</CardTitle>
+            <CardDescription className="text-[10px]">Events per 24h Period</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[220px]">
+             <ChartContainer config={chartConfig} className="h-full w-full">
+                <AreaChart data={data.incidentFrequency}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                  <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{fill: 'white', fontSize: 9}} />
+                  <YAxis hide />
+                  <Tooltip content={<ChartTooltipContent />} />
+                  <Area type="stepAfter" dataKey="count" stroke="hsl(var(--chart-4))" fill="hsl(var(--chart-4))" fillOpacity={0.1} />
+                </AreaChart>
+             </ChartContainer>
+          </CardContent>
+        </Card>
+
+        {/* 11. Dependency Network (Visual representation) */}
         <Card className="md:col-span-2 lg:col-span-3 bg-card/50 border-white/5">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2 text-white"><Network className="w-5 h-5 text-primary" /> Dependency Network</CardTitle>
             <CardDescription className="text-[10px]">Cross-Vector Interconnectivity</CardDescription>
           </CardHeader>
-          <CardContent className="h-[220px] flex items-center justify-center relative">
-            <div className="absolute inset-0 opacity-5 flex items-center justify-center">
-              <Network className="w-64 h-64" />
+          <CardContent className="h-[220px] relative">
+            <div className="absolute inset-0 flex items-center justify-center opacity-10">
+              <Network className="w-40 h-40" />
             </div>
-            <div className="grid grid-cols-3 gap-4 relative z-10 w-full">
+            <div className="grid grid-cols-3 gap-2 relative z-10 h-full">
               {['Cyber', 'Financial', 'Ops', 'Legal', 'Strategic', 'Market'].map((d, i) => (
-                <div key={d} className="p-3 rounded-xl bg-white/5 border border-white/10 text-[10px] font-bold text-center hover:bg-primary/10 hover:border-primary/50 cursor-help transition-all group">
-                  <div className="flex items-center justify-center gap-2 mb-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-primary group-hover:animate-ping" />
-                    {d.toUpperCase()}
-                  </div>
-                  <Progress value={40 + (i * 10)} className="h-1" />
+                <div key={d} className="p-3 rounded-xl bg-white/5 border border-white/10 flex flex-col justify-center items-center group hover:bg-primary/10 hover:border-primary/50 cursor-pointer transition-all">
+                  <div className="w-2 h-2 rounded-full bg-primary mb-2 group-hover:animate-ping" />
+                  <span className="text-[10px] font-bold text-white uppercase">{d}</span>
+                  <span className="text-[8px] text-muted-foreground mt-1">4 Interlinks</span>
                 </div>
               ))}
             </div>
           </CardContent>
         </Card>
 
-        {/* 10. Risk Reduction Delta */}
+        {/* 12. Risk Reduction (Before vs After) */}
         <Card className="md:col-span-2 lg:col-span-3 bg-card/50 border-white/5">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2 text-white"><History className="w-5 h-5 text-primary" /> Risk Reduction Delta</CardTitle>
@@ -522,6 +643,32 @@ export default function Dashboard() {
                 <Bar dataKey="after" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ChartContainer>
+          </CardContent>
+        </Card>
+
+        {/* 13. Root Cause Analysis (Fishbone concept) */}
+        <Card className="md:col-span-2 lg:col-span-3 bg-card/50 border-white/5">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2 text-white"><Split className="w-5 h-5 text-primary" /> Root Cause Analysis</CardTitle>
+            <CardDescription className="text-[10px]">Primary Vectors of Systemic Risk</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[220px]">
+            <div className="space-y-4">
+              {[
+                { label: "Human Factor", val: 82, color: "bg-red-500" },
+                { label: "Technical Debt", val: 65, color: "bg-orange-500" },
+                { label: "Regulatory Gap", val: 40, color: "bg-primary" },
+                { label: "Market Shift", val: 15, color: "bg-green-500" }
+              ].map((r, i) => (
+                <div key={i} className="flex items-center gap-4">
+                  <span className="text-[9px] font-bold text-white w-20 uppercase tracking-tighter">{r.label}</span>
+                  <div className="flex-1 h-3 bg-white/5 rounded-full overflow-hidden">
+                    <div className={cn("h-full", r.color)} style={{ width: `${r.val}%` }} />
+                  </div>
+                  <span className="text-[10px] font-mono text-primary w-8">{r.val}%</span>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
 

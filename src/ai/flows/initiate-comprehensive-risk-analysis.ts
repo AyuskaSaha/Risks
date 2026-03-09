@@ -1,8 +1,9 @@
+
 'use server';
 /**
  * @fileOverview This file implements the Genkit flow for initiating a comprehensive organizational risk analysis.
- * It processes core business documents (SRS, BRD, Legal, Proposal) alongside operational data.
- * Includes a retry mechanism to handle Gemini API rate limits (429 errors).
+ * Processes SRS, BRD, Legal, and Proposal documents.
+ * Includes advanced error handling for Rate Limits (429) and Resource Exhaustion.
  */
 
 import {ai} from '@/ai/genkit';
@@ -51,7 +52,6 @@ const ComprehensiveRiskAnalysisOutputSchema = z.object({
     compliance: AgentOutputSchema,
     strategicMarket: AgentOutputSchema,
   }),
-  // 15 Visualization Data Points
   heatmapData: z.array(z.object({ impact: z.number(), probability: z.number(), count: z.number(), label: z.string() })),
   trendData: z.array(z.object({ month: z.string(), current: z.number(), forecast: z.number() })),
   severityDistribution: z.array(z.object({ category: z.string(), Low: z.number(), Medium: z.number(), High: z.number(), Critical: z.number() })),
@@ -69,13 +69,7 @@ export type InitiateComprehensiveRiskAnalysisOutput = z.infer<typeof Comprehensi
 
 const comprehensiveRiskAnalysisPrompt = ai.definePrompt({
   name: 'comprehensiveRiskAnalysisPrompt',
-  input: { 
-    schema: OrganizationalDataInputSchema.extend({
-      financialStr: z.string().optional(),
-      cyberStr: z.string().optional(),
-      opsStr: z.string().optional(),
-    })
-  },
+  input: { schema: OrganizationalDataInputSchema },
   output: { schema: ComprehensiveRiskAnalysisOutputSchema },
   prompt: `You are the IntelliRisk AI Orchestrator. Perform a deep-vector risk analysis for "{{companyName}}".
 
@@ -87,17 +81,17 @@ Primary Analysis Documents:
 
 Your mission is to find inconsistencies, risks, and anomalies across all 15 vectors.
 Generate comprehensive visualization data including:
-1. heatmapData: Distribution of risks across a 5x5 matrix.
-2. trendData: Historical (last 6 months) and forecast risk levels.
-3. severityDistribution: Risks per domain split by severity level.
-4. mitigationProgress: Completion percentage for key mitigation plans.
-5. deptComparison: Radar data comparing risk across departments (Finance, Tech, Ops, Compliance, Sales).
-6. gapAnalysis: Current state vs desired vs gap.
-7. riskTimeline: Recent detections and projected future cycles.
-8. incidentFrequency: Day-by-day count for the last 14 days.
-9. riskReduction: Before and after proposed mitigations.
+1. heatmapData: Distribution across impact/probability grid.
+2. trendData: 6 months history + prediction.
+3. severityDistribution: Domain-specific severity stacks.
+4. mitigationProgress: % completion for key plans.
+5. deptComparison: Radar data comparing Finance, Tech, Ops, Compliance, Sales.
+6. gapAnalysis: Current state vs target.
+7. riskTimeline: Historical detections.
+8. incidentFrequency: Daily incident count.
+9. riskReduction: Comparative data points.
 
-Cross-reference documents to find hidden risks (e.g., if Proposal violates Legal).`,
+Cross-reference documents (e.g., if Proposal violates Legal).`,
 });
 
 /**
@@ -107,8 +101,12 @@ async function withRetry<T>(fn: () => Promise<T>, retries = 3, delay = 5000): Pr
   try {
     return await fn();
   } catch (error: any) {
-    if (retries > 0 && (error.message?.includes('429') || error.message?.includes('RESOURCE_EXHAUSTED'))) {
-      console.warn(`Rate limit hit. Retrying in ${delay / 1000}s...`);
+    const isRateLimit = error.message?.includes('429') || 
+                        error.message?.includes('RESOURCE_EXHAUSTED') || 
+                        error.message?.includes('quota');
+    
+    if (retries > 0 && isRateLimit) {
+      console.warn(`Rate limit hit in Flow. Retrying in ${delay / 1000}s... (Retries left: ${retries})`);
       await new Promise(resolve => setTimeout(resolve, delay));
       return withRetry(fn, retries - 1, delay * 2);
     }
@@ -124,12 +122,7 @@ const initiateComprehensiveRiskAnalysisFlow = ai.defineFlow(
   },
   async (input) => {
     return withRetry(async () => {
-      const { output } = await comprehensiveRiskAnalysisPrompt({
-        ...input,
-        financialStr: input.financialData ? JSON.stringify(input.financialData) : "No specific data provided",
-        cyberStr: input.cybersecurityReports ? JSON.stringify(input.cybersecurityReports) : "No specific data provided",
-        opsStr: input.operationalMetrics ? JSON.stringify(input.operationalMetrics) : "No specific data provided",
-      });
+      const { output } = await comprehensiveRiskAnalysisPrompt(input);
       if (!output) throw new Error('Analysis failed to return structured data.');
       return output;
     });
