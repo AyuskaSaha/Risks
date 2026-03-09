@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -12,14 +13,16 @@ import {
   Loader2,
   ListRestart,
   ShieldAlert,
-  FileText,
   Cpu,
-  Zap,
   TrendingUp,
   Scale,
   Globe,
   UploadCloud,
-  ChevronRight
+  ChevronRight,
+  FileText,
+  Zap,
+  CheckCircle2,
+  AlertCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -37,9 +40,10 @@ import {
 } from "recharts";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { mockOrganizationalData } from "@/lib/mock-data";
+import { cn } from "@/lib/utils";
 
 const chartConfig = {
   score: {
@@ -68,11 +72,23 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export default function Dashboard() {
-  const [loading, setLoading] = React.useState(false);
   const [analyzing, setAnalyzing] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [data, setData] = React.useState<InitiateComprehensiveRiskAnalysisOutput | null>(null);
   const [showSetup, setShowSetup] = React.useState(true);
+
+  // Simulation state for uploaded files
+  const [uploadedFiles, setUploadedFiles] = React.useState<{
+    srs: boolean;
+    brd: boolean;
+    legal: boolean;
+    proposal: boolean;
+  }>({
+    srs: false,
+    brd: false,
+    legal: false,
+    proposal: false,
+  });
 
   const [formData, setFormData] = React.useState<InitiateComprehensiveRiskAnalysisInput>({
     companyName: "Acme Corp",
@@ -81,6 +97,27 @@ export default function Dashboard() {
     legalPolicyDocument: "",
     proposalDocument: "",
   });
+
+  const handleFileUpload = (type: keyof typeof uploadedFiles) => {
+    // In a real app, we'd use a PDF parser here. 
+    // For the prototype, we simulate the success and populate the state with mock text.
+    setUploadedFiles(prev => ({ ...prev, [type]: true }));
+    setFormData(prev => ({
+      ...prev,
+      [type === 'srs' ? 'srsDocument' : type === 'brd' ? 'brdDocument' : type === 'legal' ? 'legalPolicyDocument' : 'proposalDocument']: 
+      mockOrganizationalData[type === 'srs' ? 'srsDocument' : type === 'brd' ? 'brdDocument' : type === 'legal' ? 'legalPolicyDocument' : 'proposalDocument' as keyof typeof mockOrganizationalData] as string
+    }));
+  };
+
+  const handleLoadSample = () => {
+    setFormData(mockOrganizationalData);
+    setUploadedFiles({
+      srs: true,
+      brd: true,
+      legal: true,
+      proposal: true,
+    });
+  };
 
   const handleStartAnalysis = async () => {
     setAnalyzing(true);
@@ -106,93 +143,108 @@ export default function Dashboard() {
 
   if (showSetup) {
     return (
-      <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-700">
-        <div className="text-center space-y-2">
-          <h1 className="text-4xl font-extrabold tracking-tight text-white font-headline">Intelligence Setup</h1>
-          <p className="text-muted-foreground">Provide the core documents for multi-agent risk orchestration.</p>
+      <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-700 pb-20">
+        <div className="text-center space-y-4">
+          <Badge variant="outline" className="border-primary/40 text-primary px-4 py-1 rounded-full text-[10px] tracking-widest uppercase font-bold">
+            Secure Intelligence Node
+          </Badge>
+          <h1 className="text-5xl font-extrabold tracking-tight text-white font-headline">Intelligence Setup</h1>
+          <p className="text-muted-foreground text-lg">Upload core organizational PDFs to initialize multi-agent risk orchestration.</p>
         </div>
 
-        <Card className="bg-card/50 border-primary/20 shadow-2xl overflow-hidden">
-          <div className="h-2 w-full bg-gradient-to-r from-primary/10 via-primary to-primary/10" />
-          <CardHeader>
-            <CardTitle className="text-xl flex items-center gap-2">
-              <UploadCloud className="w-5 h-5 text-primary" />
-              Strategic Document Entry
-            </CardTitle>
-            <CardDescription>Enter the raw text content for cross-correlation analysis.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <Label className="text-xs uppercase font-bold text-muted-foreground">Organization Name</Label>
-              <Input 
-                value={formData.companyName} 
-                onChange={e => setFormData({...formData, companyName: e.target.value})}
-                placeholder="e.g., Global Horizon Logistics"
-                className="bg-white/5 border-white/10 text-white"
-              />
+        <Card className="bg-card/50 border-primary/20 shadow-2xl overflow-hidden backdrop-blur-md">
+          <div className="h-1.5 w-full bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-xl flex items-center gap-2 text-white">
+                  <UploadCloud className="w-5 h-5 text-primary" />
+                  Strategic Document Ingestion
+                </CardTitle>
+                <CardDescription>System accepts PDF, DOCX, and TXT formats for vector analysis.</CardDescription>
+              </div>
+              <Button onClick={handleLoadSample} variant="outline" size="sm" className="text-[10px] font-bold border-primary/20 hover:bg-primary/10 h-8">
+                LOAD SAMPLE STRATEGY PACK
+              </Button>
             </div>
+          </CardHeader>
+          <CardContent className="space-y-8 pt-6">
+            <div className="grid grid-cols-1 gap-6">
+              <div className="space-y-2">
+                <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Target Organization</Label>
+                <Input 
+                  value={formData.companyName} 
+                  onChange={e => setFormData({...formData, companyName: e.target.value})}
+                  placeholder="e.g., Global Horizon Logistics"
+                  className="bg-white/5 border-white/10 text-white h-12 text-lg focus:border-primary/50 transition-all"
+                />
+              </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label className="text-xs uppercase font-bold text-muted-foreground">SRS Document Content</Label>
-                <Textarea 
-                  value={formData.srsDocument}
-                  onChange={e => setFormData({...formData, srsDocument: e.target.value})}
-                  placeholder="System requirements, uptime targets, technical constraints..."
-                  className="bg-white/5 border-white/10 text-white min-h-[150px]"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs uppercase font-bold text-muted-foreground">BRD Document Content</Label>
-                <Textarea 
-                  value={formData.brdDocument}
-                  onChange={e => setFormData({...formData, brdDocument: e.target.value})}
-                  placeholder="Business goals, efficiency targets, expansion plans..."
-                  className="bg-white/5 border-white/10 text-white min-h-[150px]"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs uppercase font-bold text-muted-foreground">Legal & Policy Framework</Label>
-                <Textarea 
-                  value={formData.legalPolicyDocument}
-                  onChange={e => setFormData({...formData, legalPolicyDocument: e.target.value})}
-                  placeholder="Compliance requirements, data privacy, financial controls..."
-                  className="bg-white/5 border-white/10 text-white min-h-[150px]"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs uppercase font-bold text-muted-foreground">Strategic Proposal</Label>
-                <Textarea 
-                  value={formData.proposalDocument}
-                  onChange={e => setFormData({...formData, proposalDocument: e.target.value})}
-                  placeholder="Proposed roadmaps, vendor agreements, strategic vision..."
-                  className="bg-white/5 border-white/10 text-white min-h-[150px]"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {[
+                  { id: 'srs', label: 'Software Requirements (SRS)', icon: FileText, color: 'text-blue-400' },
+                  { id: 'brd', label: 'Business Requirements (BRD)', icon: FileText, color: 'text-purple-400' },
+                  { id: 'legal', label: 'Legal & Policy Framework', icon: Scale, color: 'text-green-400' },
+                  { id: 'proposal', label: 'Strategic Roadmap Proposal', icon: Globe, color: 'text-orange-400' },
+                ].map((doc) => (
+                  <div key={doc.id} className="relative group">
+                    <div className={cn(
+                      "flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed transition-all h-[160px] cursor-pointer",
+                      uploadedFiles[doc.id as keyof typeof uploadedFiles] 
+                        ? "bg-primary/5 border-primary/40" 
+                        : "bg-white/5 border-white/5 hover:border-white/20 hover:bg-white/10"
+                    )}
+                    onClick={() => document.getElementById(`file-${doc.id}`)?.click()}
+                    >
+                      <input 
+                        type="file" 
+                        id={`file-${doc.id}`} 
+                        className="hidden" 
+                        accept=".pdf,.doc,.docx,.txt"
+                        onChange={() => handleFileUpload(doc.id as any)}
+                      />
+                      {uploadedFiles[doc.id as keyof typeof uploadedFiles] ? (
+                        <div className="flex flex-col items-center gap-2 animate-in zoom-in-95 duration-300">
+                          <CheckCircle2 className="w-10 h-10 text-primary" />
+                          <span className="text-xs font-bold text-white uppercase tracking-tighter">{doc.id.toUpperCase()} Processed</span>
+                          <span className="text-[10px] text-muted-foreground">Document vector extracted</span>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center gap-3">
+                          <doc.icon className={cn("w-10 h-10 opacity-40 group-hover:opacity-100 transition-opacity", doc.color)} />
+                          <span className="text-sm font-medium text-muted-foreground text-center">{doc.label}</span>
+                          <Badge variant="secondary" className="text-[9px] bg-white/10">SELECT PDF</Badge>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
             <div className="pt-4">
               <Button 
                 onClick={handleStartAnalysis} 
-                disabled={analyzing || !formData.srsDocument || !formData.brdDocument}
-                className="w-full h-12 bg-primary hover:bg-primary/90 text-black font-bold text-lg gap-2"
+                disabled={analyzing || !uploadedFiles.srs || !uploadedFiles.brd}
+                className="w-full h-14 bg-primary hover:bg-primary/90 text-black font-bold text-xl gap-3 shadow-[0_0_30px_rgba(212,175,55,0.2)] rounded-xl group"
               >
                 {analyzing ? (
                   <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Orchestrating Agents...
+                    <Loader2 className="w-6 h-6 animate-spin" />
+                    Correlating Global Vectors...
                   </>
                 ) : (
                   <>
-                    <Activity className="w-5 h-5" />
-                    Initialize AI Analysis
-                    <ChevronRight className="w-5 h-5" />
+                    <Activity className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                    Initialize Multi-Agent Orchestration
+                    <ChevronRight className="w-6 h-6" />
                   </>
                 )}
               </Button>
-              {(!formData.srsDocument || !formData.brdDocument) && (
-                <p className="text-[10px] text-center mt-2 text-muted-foreground uppercase tracking-widest">Please fill in at least SRS and BRD to begin</p>
-              )}
+              <div className="flex items-center justify-center gap-2 mt-4 text-[10px] text-muted-foreground uppercase tracking-[0.2em] font-bold">
+                <ShieldAlert className="w-3 h-3" />
+                System requires SRS and BRD minimum for baseline correlation
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -202,14 +254,24 @@ export default function Dashboard() {
 
   if (analyzing) {
     return (
-      <div className="flex flex-col items-center justify-center h-[80vh] space-y-6">
+      <div className="flex flex-col items-center justify-center h-[80vh] space-y-8 animate-in fade-in duration-1000">
         <div className="relative">
-          <Loader2 className="w-16 h-16 text-primary animate-spin" />
-          <Cpu className="w-6 h-6 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+          <div className="w-32 h-32 rounded-full border-2 border-primary/20 border-t-primary animate-spin" />
+          <Cpu className="w-10 h-10 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse" />
         </div>
-        <div className="text-center space-y-2">
-          <h2 className="text-2xl font-bold text-white">Multi-Agent Orchestration</h2>
-          <p className="text-muted-foreground max-w-sm">Correlating SRS, BRD, Legal, and Proposal telemetry for {formData.companyName}...</p>
+        <div className="text-center space-y-4">
+          <h2 className="text-3xl font-bold text-white font-headline tracking-tight">Orchestrating AI Agents</h2>
+          <div className="flex items-center justify-center gap-4">
+            {['Financial', 'Cyber', 'Ops', 'Legal', 'Market'].map((a, i) => (
+              <div key={a} className="flex flex-col items-center gap-2" style={{ animationDelay: `${i * 150}ms` }}>
+                <div className="w-2 h-2 rounded-full bg-primary animate-bounce" />
+                <span className="text-[10px] text-muted-foreground font-bold uppercase">{a}</span>
+              </div>
+            ))}
+          </div>
+          <p className="text-muted-foreground max-w-sm mx-auto text-sm leading-relaxed">
+            Correlating document inconsistencies across {formData.companyName}'s strategic framework...
+          </p>
         </div>
       </div>
     );
@@ -218,16 +280,16 @@ export default function Dashboard() {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center h-[80vh] space-y-6 text-center">
-        <div className="w-20 h-20 rounded-full bg-destructive/10 flex items-center justify-center">
-          <ShieldAlert className="w-10 h-10 text-destructive" />
+        <div className="w-24 h-24 rounded-full bg-destructive/10 flex items-center justify-center border border-destructive/20 shadow-[0_0_30px_rgba(239,68,68,0.1)]">
+          <AlertCircle className="w-12 h-12 text-destructive" />
         </div>
         <div className="space-y-2">
-          <h2 className="text-2xl font-bold text-white">Analysis Interrupted</h2>
-          <p className="text-muted-foreground max-w-lg">{error}</p>
+          <h2 className="text-3xl font-bold text-white">Intelligence Failure</h2>
+          <p className="text-muted-foreground max-w-lg text-lg">{error}</p>
         </div>
-        <Button onClick={() => setShowSetup(true)} className="gap-2">
-          <ListRestart className="w-4 h-4" />
-          Adjust Inputs
+        <Button onClick={() => setShowSetup(true)} className="gap-2 h-12 px-8 bg-white/10 hover:bg-white/20 border-white/10 text-white rounded-xl">
+          <ListRestart className="w-5 h-5" />
+          Re-Upload Strategic Pack
         </Button>
       </div>
     );
@@ -238,20 +300,24 @@ export default function Dashboard() {
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <Badge className="bg-primary/20 text-primary border-primary/20 text-[10px] font-bold">LIVE ANALYSIS</Badge>
+            <span className="text-xs text-muted-foreground uppercase tracking-widest font-bold">Node: Alpha-7</span>
+          </div>
           <h1 className="text-4xl font-extrabold tracking-tight text-white font-headline">Intelligence Command</h1>
-          <p className="text-muted-foreground">Orchestrated analysis for {formData.companyName}.</p>
+          <p className="text-muted-foreground">Strategic posture review for {formData.companyName}.</p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={() => setShowSetup(true)} variant="outline" size="sm" className="gap-2 bg-white/5 hover:bg-white/10 border-white/10 text-white">
+          <Button onClick={() => setShowSetup(true)} variant="outline" size="sm" className="gap-2 bg-white/5 hover:bg-white/10 border-white/10 text-white h-10 px-4 rounded-lg">
             <ListRestart className="w-4 h-4" />
-            Recalibrate Inputs
+            Recalibrate Input Documents
           </Button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="md:col-span-1 bg-card/50 backdrop-blur-sm border-primary/20 shadow-[0_0_30px_rgba(212,175,55,0.05)]">
+        <Card className="md:col-span-1 bg-card/50 backdrop-blur-sm border-primary/20 shadow-[0_0_30px_rgba(212,175,55,0.05)] rounded-2xl overflow-hidden">
           <CardHeader>
             <CardTitle className="text-lg">Aggregate Risk Index</CardTitle>
             <CardDescription>Synthesized Organizational Posture</CardDescription>
@@ -261,10 +327,10 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="md:col-span-2 bg-card/30 backdrop-blur-sm border-white/5">
+        <Card className="md:col-span-2 bg-card/30 backdrop-blur-sm border-white/5 rounded-2xl">
           <CardHeader>
             <CardTitle className="text-lg">Domain Risk Heatmap</CardTitle>
-            <CardDescription>Multi-Agent Threat Distribution</CardDescription>
+            <CardDescription>Multi-Agent Threat Distribution Across Pillars</CardDescription>
           </CardHeader>
           <CardContent className="h-[240px]">
             <ChartContainer config={chartConfig} className="h-full w-full">
@@ -289,14 +355,14 @@ export default function Dashboard() {
             <Cpu className="w-5 h-5 text-primary" />
             Specialized Agent Cognitive Logs
           </h2>
-          <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">5 Active Units</span>
+          <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">5 Active Units In-Sync</span>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           {domainData.map((domain) => {
             const analysis = data.domainAnalysis[domain.id as keyof typeof data.domainAnalysis];
             
             return (
-              <Card key={domain.name} className="bg-card/40 border-white/5 hover:border-primary/40 transition-all group overflow-hidden">
+              <Card key={domain.name} className="bg-card/40 border-white/5 hover:border-primary/40 transition-all group overflow-hidden rounded-xl">
                 <div className="h-1 w-full" style={{ backgroundColor: domain.fill }} />
                 <CardHeader className="p-4">
                   <div className="flex items-center justify-between mb-2">
@@ -306,10 +372,10 @@ export default function Dashboard() {
                   <CardTitle className="text-sm font-bold text-white">{domain.name} Agent</CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 pt-0">
-                  <p className="text-[11px] leading-relaxed text-muted-foreground line-clamp-3 italic mb-4">
+                  <p className="text-[11px] leading-relaxed text-muted-foreground line-clamp-3 italic mb-4 h-[45px]">
                     "{analysis.summary}"
                   </p>
-                  <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-2 border-t border-white/5 pt-4">
                     <Link href={`/agents/${domain.id}`} className="inline-flex items-center gap-1 text-[10px] text-primary font-bold hover:underline">
                       COGNITIVE REVIEW <Cpu className="w-3 h-3" />
                     </Link>
@@ -325,27 +391,27 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="bg-card/30 border-white/5">
+        <Card className="bg-card/30 border-white/5 rounded-2xl">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <CardTitle className="text-lg text-white">Critical Anomalies</CardTitle>
-              <CardDescription>Cross-Document Discrepancies</CardDescription>
+              <CardTitle className="text-lg text-white">Cross-Document Anomalies</CardTitle>
+              <CardDescription>Discrepancies identified between SRS, BRD, and Legal</CardDescription>
             </div>
             <Activity className="w-5 h-5 text-primary" />
           </CardHeader>
           <CardContent>
             <div className="text-sm leading-relaxed text-muted-foreground bg-white/5 p-4 rounded-xl border border-white/10 relative overflow-hidden group">
-              <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
+              <div className="absolute top-0 left-0 w-1 h-full bg-primary shadow-[0_0_15px_rgba(212,175,55,0.5)]" />
               {data.anomaliesSummary}
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-card/30 border-white/5">
+        <Card className="bg-card/30 border-white/5 rounded-2xl">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
               <CardTitle className="text-lg text-white">Global Mitigation Plan</CardTitle>
-              <CardDescription>Consolidated Strategic Roadmap</CardDescription>
+              <CardDescription>Consolidated Strategic Roadmap for Leadership</CardDescription>
             </div>
             <ShieldCheck className="w-5 h-5 text-primary" />
           </CardHeader>
@@ -353,7 +419,7 @@ export default function Dashboard() {
             <div className="space-y-3">
               {data.globalMitigationStrategies.map((strategy, idx) => (
                 <div key={idx} className="flex items-start gap-3 p-3 rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
-                  <div className="w-5 h-5 rounded bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary shrink-0 border border-primary/20">{idx + 1}</div>
+                  <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary shrink-0 border border-primary/20">{idx + 1}</div>
                   <span className="text-xs text-muted-foreground leading-snug">{strategy}</span>
                 </div>
               ))}
