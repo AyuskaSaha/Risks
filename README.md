@@ -1,7 +1,8 @@
 # Overview(AI Assissted Risk Manager)
 
 With AWS integration.
-AWS amplify
+
+AWS amplify, AWS S3, AWS DynamoDB, AWS Lambda
 
 
 This is a NextJS starter.
