@@ -1,7 +1,7 @@
 # Overview(AI Assissted Risk Manager)
 
 With AWS integration.
-
+AWS amplify
 
 
 This is a NextJS starter.
