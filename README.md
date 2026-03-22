@@ -1,6 +1,6 @@
 # Overview(AI Assissted Risk Manager)
 
-With AWS
+With AWS integration.
 
 
 
